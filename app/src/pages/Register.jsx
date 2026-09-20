@@ -20,7 +20,7 @@ const Register = () => {
     setErrorMsg('');
 
     try {
-     const response = await fetch('https://shahuraje-backend.onrender.com/api/users/register', {
+      const response = await fetch('https://shahuraje-backend.onrender.com/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -50,50 +50,46 @@ const Register = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-white">
-        <div className="w-full h-full flex flex-col justify-between px-6 py-8 overflow-y-auto">
+        <div className="w-full h-full flex flex-col justify-between px-6 py-6 overflow-y-auto">
           
           <div>
             <button 
               onClick={() => navigate('/login')}
-              className="flex items-center text-[#0c542b] font-bold text-sm mb-2 hover:underline"
+              className="flex items-center text-[#0c542b] font-bold text-sm mb-1 hover:underline"
             >
               <ArrowLeft size={18} className="mr-1" /> मागे जा
             </button>
           </div>
 
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-1 drop-shadow-sm flex justify-center items-center">
-              <svg width="60" height="60" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M29 45 C 17 43 10 31 12 19 C 22 21 31 31 29 45 Z" fill="#1b5e20" />
-                <path d="M33 48 C 45 48 57 38 55 15 C 41 15 31 28 33 48 Z" fill="#0c542b" />
-              </svg>
+          {/* शीर्ष भाग: शाहूराजे ब्रँड लोगो */}
+          <div className="flex flex-col items-center text-center mt-1">
+            <div className="w-48 max-w-[65%] drop-shadow-md flex items-center justify-center">
+              <img 
+                src="/shahuraje1.png" 
+                alt="शाहूराजे कृषी केंद्र" 
+                className="w-full h-auto object-contain"
+              />
             </div>
             
-            <h1 
-              className="text-5xl font-black text-[#0a381f] tracking-tighter leading-none mt-1 drop-shadow-md"
-              style={{ textShadow: "0px 4px 10px rgba(0,0,0,0.15)" }}
-            >
-              शाहूराजे
-            </h1>
-            
-            <h2 className="text-[1.5rem] font-bold text-[#1b5e20] mt-2 tracking-wide drop-shadow-sm">
-              कृषी केंद्र
-            </h2>
+            <p className="text-xs font-bold text-[#78350F] mt-1 tracking-wide">
+              शेतकऱ्यांचा विश्वास, आमची जबाबदारी...
+            </p>
           </div>
 
-          <div className="my-6 w-full max-w-sm mx-auto">
-            <div className="text-center mb-5">
+          {/* मध्य भाग: फॉर्म */}
+          <div className="my-auto w-full max-w-sm mx-auto py-3">
+            <div className="text-center mb-4">
               <h3 className="text-2xl font-black text-gray-900 mb-1">नवीन खाते तयार करा</h3>
               <p className="text-sm font-semibold text-gray-500">शेतकरी नोंदणी फॉर्म</p>
             </div>
 
             {errorMsg && (
-              <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-100 mb-4 font-semibold text-center">
+              <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-100 mb-3 font-semibold text-center">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleRegister} className="space-y-3.5">
+            <form onSubmit={handleRegister} className="space-y-3">
               <div className="relative flex items-center">
                 <span className="absolute left-4 text-gray-400">
                   <User size={20} />
@@ -161,13 +157,14 @@ const Register = () => {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#0c542b] hover:bg-[#083a1d] active:scale-95 transition-all text-white py-3.5 rounded-xl font-bold text-lg shadow-md tracking-wider mt-3 disabled:opacity-50"
+                className="w-full bg-[#0c542b] hover:bg-[#083a1d] active:scale-95 transition-all text-white py-3.5 rounded-xl font-bold text-lg shadow-md tracking-wider mt-2 disabled:opacity-50"
               >
                 {loading ? 'नोंदणी होत आहे...' : 'नोंदणी करा'}
               </button>
             </form>
           </div>
 
+          {/* तळाचा भाग: लॉगिन लिंक */}
           <div className="text-center pb-2">
             <p className="text-xs font-semibold text-gray-500">
               आधीपासून खाते आहे का?{' '}

@@ -17,7 +17,7 @@ const Login = () => {
     setErrorMsg('');
 
     try {
-     const response = await fetch('https://shahuraje-backend.onrender.com/api/users/login', {
+      const response = await fetch('https://shahuraje-backend.onrender.com/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -43,27 +43,26 @@ const Login = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-white">
-        <div className="w-full h-full flex flex-col justify-between px-6 py-10 overflow-y-auto">
+        <div className="w-full h-full flex flex-col justify-between px-6 py-8 overflow-y-auto">
           
-          <div className="flex flex-col items-center text-center mt-2">
-            <div className="mb-1 drop-shadow-sm flex justify-center items-center">
-              <svg width="76" height="76" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M29 45 C 17 43 10 31 12 19 C 22 21 31 31 29 45 Z" fill="#1b5e20" />
-                <path d="M33 48 C 45 48 57 38 55 15 C 41 15 31 28 33 48 Z" fill="#0c542b" />
-              </svg>
+          {/* शीर्ष भाग: शाहूराजे ब्रँड लोगो */}
+          <div className="flex flex-col items-center text-center mt-4">
+            <div className="w-56 max-w-[70%] drop-shadow-md flex items-center justify-center">
+              <img 
+                src="/shahuraje1.png" 
+                alt="शाहूराजे कृषी केंद्र" 
+                className="w-full h-auto object-contain"
+              />
             </div>
             
-            <h1 className="text-6xl font-black text-[#0a381f] tracking-tighter leading-none mt-1 drop-shadow-md">
-              शाहूराजे
-            </h1>
-            
-            <h2 className="text-[1.8rem] font-bold text-[#1b5e20] mt-3.5 tracking-wide drop-shadow-sm">
-              कृषी केंद्र
-            </h2>
+            <p className="text-sm font-bold text-[#78350F] mt-1 tracking-wide">
+              शेतकऱ्यांचा विश्वास, आमची जबाबदारी...
+            </p>
           </div>
 
-          <div className="my-8 w-full max-w-sm mx-auto">
-            <div className="text-center mb-6">
+          {/* मध्य भाग: फॉर्म */}
+          <div className="my-auto w-full max-w-sm mx-auto py-4">
+            <div className="text-center mb-5">
               <h3 className="text-2xl font-black text-gray-900 mb-1">आपले स्वागत आहे!</h3>
               <p className="text-sm font-semibold text-gray-500">शेतकरी म्हणून लॉगिन करा</p>
             </div>
@@ -112,7 +111,7 @@ const Login = () => {
 
               <div className="text-right">
                 <span 
-                 onClick={() => navigate('/forgot-password')}
+                  onClick={() => navigate('/forgot-password')}
                   className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
                 >
                   पासवर्ड विसरलात ?
@@ -128,7 +127,7 @@ const Login = () => {
               </button>
             </form>
 
-            <div className="flex items-center my-6">
+            <div className="flex items-center my-5">
               <div className="flex-grow border-t border-gray-200"></div>
               <span className="px-4 text-xs font-bold text-gray-400">किंवा</span>
               <div className="flex-grow border-t border-gray-200"></div>
@@ -160,6 +159,7 @@ const Login = () => {
             </div>
           </div>
 
+          {/* तळाचा भाग: नोंदणी लिंक */}
           <div className="text-center pb-2">
             <p className="text-xs font-semibold text-gray-500">
               नवीन खाते तयार करा?{' '}

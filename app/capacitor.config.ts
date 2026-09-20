@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Shahuraje Krushi',
   webDir: 'dist',
   server: {
-    androidScheme: 'http',
+    url: 'https://shahuraje-app.onrender.com', // तुमची Render ची लाईव्ह साईट URL
     cleartext: true
   }
 };
