@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; 
+import { checkHasMpin, unlockApp } from '../mpinStorage';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,7 +29,14 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/home');
+        
+        unlockApp();
+
+        if (!checkHasMpin()) {
+          navigate('/setup-mpin', { replace: true });
+        } else {
+          navigate('/home', { replace: true });
+        }
       } else {
         setErrorMsg(data.error || 'ईमेल किंवा पासवर्ड चुकीचा आहे.');
       }
@@ -45,7 +53,7 @@ const Login = () => {
       <IonContent fullscreen className="bg-white">
         <div className="w-full h-full flex flex-col justify-between px-6 py-8 overflow-y-auto">
           
-          {/* शीर्ष भाग: शाहूराजे ब्रँड लोगो */}
+          {/* Shirsh bhag: Shahuraje Brand Logo */}
           <div className="flex flex-col items-center text-center mt-4">
             <div className="w-56 max-w-[70%] drop-shadow-md flex items-center justify-center">
               <img 
@@ -60,7 +68,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* मध्य भाग: फॉर्म */}
+          {/* Madhya bhag: Form */}
           <div className="my-auto w-full max-w-sm mx-auto py-4">
             <div className="text-center mb-5">
               <h3 className="text-2xl font-black text-gray-900 mb-1">आपले स्वागत आहे!</h3>
@@ -159,7 +167,7 @@ const Login = () => {
             </div>
           </div>
 
-          {/* तळाचा भाग: नोंदणी लिंक */}
+          {/* Talacha bhag: Nondani link */}
           <div className="text-center pb-2">
             <p className="text-xs font-semibold text-gray-500">
               नवीन खाते तयार करा?{' '}

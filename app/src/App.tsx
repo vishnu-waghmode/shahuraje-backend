@@ -26,6 +26,7 @@ import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
+import MpinScreen from './pages/MpinScreen';
 
 setupIonicReact();
 
@@ -42,18 +43,29 @@ const App = () => (
 
           {/* शेतकरी नोंदणी (Register) स्क्रीन */}
           <Route path="/register" element={<Register />} />
+
+          {/* MPIN स्क्रीन */}
+          <Route path="/mpin" element={<MpinScreen />} />
+          <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
+
           {/* home page  */}
           <Route path="/home" element={<Home />} />
+
           {/* product listing */}
           <Route path="/productlisting" element={<ProductListing />} />
+
           {/* product details */}
           <Route path="/product-detail" element={<ProductDetail />} />
+
           {/* cart  */}
           <Route path="/cart" element={<Cart />} />
+
           {/* orders  */}
           <Route path="/orders" element={<Orders />} />
+
           {/* profile  */}
           <Route path="/profile" element={<Profile />} />
+
           {/* forgot password  */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>

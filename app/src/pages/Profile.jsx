@@ -5,6 +5,7 @@ import {
   User, MapPin, Globe, HelpCircle, FileText, LogOut, ChevronRight, 
   Home as HomeIcon, Package, ShoppingCart, ArrowLeft 
 } from 'lucide-react';
+import { lockApp } from '../mpinStorage';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -18,11 +19,12 @@ const Profile = () => {
     { id: 5, icon: <FileText size={20} />, title: 'नियम आणि अटी', subtitle: 'ॲप वापरण्याच्या अटी' },
   ];
 
-  // लॉगआउट फंक्शन
+  // लॉगआउट फंक्शन (ॲप लॉक करून MPIN स्क्रीनवर पाठवेल)
   const handleLogout = () => {
     const confirmLogout = window.confirm("तुम्हाला नक्की लॉगआउट करायचे आहे का?");
     if (confirmLogout) {
-      navigate('/login');
+      lockApp();
+      navigate('/mpin', { replace: true });
     }
   };
 
@@ -36,7 +38,6 @@ const Profile = () => {
             className="bg-[#0c542b] px-4 pb-6 rounded-b-[40px] shadow-md relative"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
           >
-            {/* नवीन बॅक ॲरो आणि टायटल */}
             <div className="flex items-center justify-between mb-6 relative z-10">
               <button 
                 onClick={() => navigate(-1)}
@@ -49,24 +50,20 @@ const Profile = () => {
                 माझे प्रोफाईल
               </h1>
               
-              {/* उजव्या बाजूला टायटल सेंटरमध्ये राहण्यासाठी मोकळी जागा (Spacer) */}
               <div className="w-9 h-9"></div>
             </div>
             
             <div className="flex flex-col items-center relative z-10">
-              {/* प्रोफाईल फोटो */}
               <div className="w-20 h-20 bg-white rounded-full p-1 shadow-lg mb-3">
                 <div className="w-full h-full bg-green-100 rounded-full flex items-center justify-center text-[#0c542b] font-black text-2xl">
                   RP
                 </div>
               </div>
               
-              {/* युझरचे नाव आणि नंबर */}
               <h2 className="text-lg font-bold text-white">राजेश पाटील</h2>
               <p className="text-xs text-green-100 mt-1">+91 98765 43210</p>
             </div>
             
-            {/* बॅकग्राऊंड डिझाईन */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="absolute bottom-0 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           </div>
@@ -113,7 +110,7 @@ const Profile = () => {
         </div>
       </IonContent>
 
-      {/* ४. प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार */}
+      {/* ४. बॉटम नेव्हिगेशन बार */}
       <div 
         className="fixed left-4 right-4 bg-white/90 backdrop-blur-lg border border-gray-100 py-3 px-6 flex justify-between items-center z-50 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-3xl"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
