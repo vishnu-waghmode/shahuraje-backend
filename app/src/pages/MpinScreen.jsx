@@ -8,45 +8,57 @@ import { isBiometricAvailable, authenticateWithBiometrics } from '../biometricAu
 const MpinScreen = ({ isSettingUp = false }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
-  const [hasBiometrics, setHasBiometrics] = useState(false);
   const navigate = useNavigate();
 
-  // स्क्रीन उघडल्यावर फिंगरप्रिंट उपलब्ध असल्यास ऑटोमॅटिक स्कॅनर उघडा
-  useEffect(() => {
-    if (!isSettingUp) {
-      isBiometricAvailable().then((available) => {
-        setHasBiometrics(available);
-        if (available) {
-          triggerBiometricAuth();
-        }
-      });
-    }
-  }, [isSettingUp]);
-
-  const triggerBiometricAuth = async () => {
-    const success = await authenticateWithBiometrics();
-    if (success) {
-      unlockApp();
-      navigate('/home', { replace: true });
+  // फिंगरप्रिंट स्कॅनिंग सुरू करणे
+  const handleBiometricClick = async () => {
+    try {
+      const available = await isBiometricAvailable();
+      if (!available) {
+        setError('या फोनवर बायोमेट्रिक/फिंगरप्रिंट उपलब्ध नाही किंवा सेट नाही.');
+        return;
+      }
+      const success = await authenticateWithBiometrics();
+      if (success) {
+        unlockApp();
+        navigate('/home', { replace: true });
+      }
+    } catch (err) {
+      console.error('Biometric error:', err);
+      setError('फिंगरप्रिंट प्रमाणीकरण अयशस्वी.');
     }
   };
 
+  // स्क्रीन लोड झाल्यावर आपोआप फिंगरप्रिंट उघडणे (पर्यायी)
+  useEffect(() => {
+    if (!isSettingUp) {
+      isBiometricAvailable().then((available) => {
+        if (available) {
+          handleBiometricClick();
+        }
+      }).catch(() => {});
+    }
+  }, [isSettingUp]);
+
+  // नंबर दाबल्यावर
   const handleKeyPress = (num) => {
     if (pin.length < 4) {
-      const updatedPin = pin + num;
-      setPin(updatedPin);
-      if (updatedPin.length === 4) {
-        processPin(updatedPin);
+      const newPin = pin + num;
+      setPin(newPin);
+      if (newPin.length === 4) {
+        validatePin(newPin);
       }
     }
   };
 
+  // एक नंबर पुसणे (हटवा)
   const handleDelete = () => {
     setPin((prev) => prev.slice(0, -1));
     setError('');
   };
 
-  const processPin = (finalPin) => {
+  // पिन तपासणी
+  const validatePin = (finalPin) => {
     if (isSettingUp) {
       setAppMpin(finalPin);
       unlockApp();
@@ -56,7 +68,7 @@ const MpinScreen = ({ isSettingUp = false }) => {
         unlockApp();
         navigate('/home', { replace: true });
       } else {
-        setError('चुकीचा पिन! कृपया पुन्हा प्रयत्न करा.');
+        setError('चुकीचा MPIN! पुन्हा प्रयत्न करा.');
         setPin('');
       }
     }
@@ -64,57 +76,66 @@ const MpinScreen = ({ isSettingUp = false }) => {
 
   return (
     <IonPage>
-      <IonContent fullscreen className="ion-padding">
-        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 select-none">
-          <div className="w-full max-w-xs text-center">
+      <IonContent fullscreen className="ion-padding bg-slate-50">
+        <div className="flex flex-col items-center justify-center min-h-screen py-6 px-4">
+          <div className="w-full max-w-xs text-center flex flex-col items-center">
+            
+            {/* ब्रँड लोगो */}
             <img
               src="/shahuraje1.png"
               alt="शाहूराजे"
-              className="w-20 h-20 mx-auto mb-4 object-contain"
+              className="w-20 h-20 mb-3 object-contain"
             />
+
             <h2 className="text-xl font-bold text-gray-800">
-              {isSettingUp ? 'नवीन MPIN सेट करा' : 'शाहूराजे MPIN टाका'}
+              {isSettingUp ? 'नवीन MPIN सेट करा' : ' MPIN टाका'}
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {isSettingUp ? 'पुढील लॉगिनसाठी ४ अंकी पिन निवडा' : 'सुरक्षित लॉगिनसाठी पिन टाका किंवा फिंगरप्रिंट वापरा'}
+            <p className="text-xs text-gray-500 mt-1">
+              {isSettingUp 
+                ? 'पुढील लॉगिनसाठी ४ अंकी पिन निवडा' 
+                : 'सुरक्षित लॉगिनसाठी पिन टाका किंवा फिंगरप्रिंट वापरा'}
             </p>
 
             {/* पिनचे ४ ठिपके */}
-            <div className="flex justify-center gap-4 my-7">
+            <div className="flex justify-center gap-4 my-6">
               {[0, 1, 2, 3].map((idx) => (
                 <div
                   key={idx}
                   className={`w-4 h-4 rounded-full border-2 transition-all ${
                     pin.length > idx
-                      ? 'bg-emerald-600 border-emerald-600 scale-110'
+                      ? 'bg-[#0c542b] border-[#0c542b] scale-110'
                       : 'border-gray-300 bg-white'
                   }`}
                 />
               ))}
             </div>
 
-            {error && <p className="text-red-500 text-xs mb-4 font-medium">{error}</p>}
+            {/* एरर मेसेज */}
+            {error && (
+              <p className="text-red-500 text-xs mb-4 font-semibold px-2">
+                {error}
+              </p>
+            )}
 
-            {/* नंबर पॅड (Keypad) */}
-            <div className="grid grid-cols-3 gap-4 mb-5">
+            {/* नंबर कीपॅड (Keypad) */}
+            <div className="grid grid-cols-3 gap-4 mb-6 w-full justify-items-center">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
                 <button
                   key={digit}
                   type="button"
                   onClick={() => handleKeyPress(digit)}
-                  className="w-16 h-16 rounded-full bg-white shadow text-xl font-semibold text-gray-700 active:bg-gray-200 mx-auto flex items-center justify-center"
+                  className="w-16 h-16 rounded-full bg-white text-gray-800 text-2xl font-bold shadow-md active:bg-gray-200 active:scale-95 transition-all flex items-center justify-center border border-gray-100"
                 >
                   {digit}
                 </button>
               ))}
 
-              {/* डाव्या बाजूला फिंगरप्रिंटचे बटण (फक्त लॉगिन स्क्रीनवर) */}
-              {!isSettingUp && hasBiometrics ? (
+              {/* १. फिंगरप्रिंट बटण (० च्या डाव्या बाजूला कायम दिसेल) */}
+              {!isSettingUp ? (
                 <button
                   type="button"
-                  onClick={triggerBiometricAuth}
-                  className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-700 shadow mx-auto flex items-center justify-center active:bg-emerald-100"
-                  title="फिंगरप्रिंट वापरा"
+                  onClick={handleBiometricClick}
+                  className="w-16 h-16 rounded-full bg-green-50 text-[#0c542b] border border-green-200 shadow-md active:bg-green-100 active:scale-95 transition-all flex items-center justify-center"
                 >
                   <Fingerprint size={28} />
                 </button>
@@ -122,23 +143,26 @@ const MpinScreen = ({ isSettingUp = false }) => {
                 <div className="w-16 h-16" />
               )}
 
+              {/* २. शून्य (0) */}
               <button
                 type="button"
                 onClick={() => handleKeyPress('0')}
-                className="w-16 h-16 rounded-full bg-white shadow text-xl font-semibold text-gray-700 active:bg-gray-200 mx-auto flex items-center justify-center"
+                className="w-16 h-16 rounded-full bg-white text-gray-800 text-2xl font-bold shadow-md active:bg-gray-200 active:scale-95 transition-all flex items-center justify-center border border-gray-100"
               >
                 0
               </button>
 
+              {/* ३. हटवा (Backspace/Delete) */}
               <button
                 type="button"
                 onClick={handleDelete}
-                className="w-16 h-16 rounded-full bg-gray-100 shadow text-sm font-semibold text-gray-600 active:bg-gray-200 mx-auto flex items-center justify-center"
+                className="w-16 h-16 rounded-full bg-gray-100 text-gray-700 text-xs font-bold shadow-sm active:bg-gray-200 active:scale-95 transition-all flex items-center justify-center border border-gray-200"
               >
                 हटवा
               </button>
             </div>
 
+            {/* दुसऱ्या नंबरने लॉगिन करण्याचा पर्याय */}
             {!isSettingUp && (
               <button
                 type="button"
@@ -146,11 +170,12 @@ const MpinScreen = ({ isSettingUp = false }) => {
                   localStorage.clear();
                   navigate('/login', { replace: true });
                 }}
-                className="text-xs text-emerald-700 underline font-medium"
+                className="text-xs text-[#0c542b] font-semibold underline p-2 mt-2"
               >
                 दुसऱ्या मोबाईल नंबरने लॉगिन करा
               </button>
             )}
+
           </div>
         </div>
       </IonContent>
