@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, setupIonicReact, useIonRouter } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
 
@@ -54,28 +54,33 @@ const TopRouteLoader = () => {
   );
 };
 
-/* २. मोबाईल हार्डवेअर बॅक बटण हँडलर */
-const HardwareBackButtonHandler = () => {
-  const navigate = useNavigate();
+/* २. अचूक बॅक बटण हँडलर (Ionic + Capacitor) */
+const BackButtonManager = () => {
+  const ionRouter = useIonRouter();
   const location = useLocation();
 
   useEffect(() => {
-    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
-      const currentPath = location.pathname;
+    // Capacitor चा हार्डवेअर बॅक लिसनर
+    const listenerPromise = CapApp.addListener('backButton', () => {
+      const path = location.pathname;
 
-      // जर युझर होम, स्प्लॅश किंवा लॉगिनवर असेल तर ॲप बंद होईल
-      if (currentPath === '/home' || currentPath === '/' || currentPath === '/login') {
+      // १. जर होम, लॉगिन किंवा स्प्लॅश असेल तरच ॲप बंद करा
+      if (path === '/home' || path === '/' || path === '/login') {
         CapApp.exitApp();
+      } 
+      // २. इतर कोणत्याही पानावर (उदा. cart, orders, profile, productlisting) असेल तर मागे जा
+      else if (ionRouter.canGoBack()) {
+        ionRouter.back();
       } else {
-        // इतर पानांवर (Cart, Profile, ProductListing इत्यादी) असेल तर मागील पानावर नेणे
-        navigate(-1);
+        // फॉलबॅक: जर हिस्ट्री सापडली नाही तर थेट /home वर नेणे
+        window.history.back();
       }
     });
 
     return () => {
-      backButtonListener.then(handler => handler.remove());
+      listenerPromise.then(handler => handler.remove());
     };
-  }, [location, navigate]);
+  }, [location.pathname, ionRouter]);
 
   return null;
 };
@@ -83,11 +88,8 @@ const HardwareBackButtonHandler = () => {
 const App = () => (
   <IonApp>
     <IonReactRouter>
-      {/* १. टॉप लोडर */}
       <TopRouteLoader />
-
-      {/* २. मोबाईल बॅक बटण लिसनर */}
-      <HardwareBackButtonHandler />
+      <BackButtonManager />
 
       <IonRouterOutlet>
         <Routes>
