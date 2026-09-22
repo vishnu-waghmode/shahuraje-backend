@@ -3,37 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { IonPage } from '@ionic/react';
 import { Fingerprint } from 'lucide-react';
 import { verifyAppMpin, unlockApp, setAppMpin } from '../mpinStorage';
-import { isBiometricAvailable, authenticateWithBiometrics } from '../biometricAuth';
+import { authenticateWithBiometrics } from '../biometricAuth';
 
 const MpinScreen = ({ isSettingUp = false }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [isBioLoading, setIsBioLoading] = useState(false);
   const navigate = useNavigate();
 
-  // फिंगरप्रिंट ऑथेंटिकेशन
+  // फिंगरप्रिंट बटण क्लिक झाल्यावर
   const handleBiometricClick = async (e) => {
     if (e) e.stopPropagation();
+    if (isBioLoading) return;
+
     setError('');
+    setIsBioLoading(true);
+
     try {
-      const available = await isBiometricAvailable();
-      if (!available) {
-        setError('या मोबाईलवर फिंगरप्रिंट उपलब्ध नाही किंवा नोंदवलेला नाही.');
-        return;
-      }
       const success = await authenticateWithBiometrics();
       if (success) {
         unlockApp();
         navigate('/home', { replace: true });
+        return;
       } else {
-        setError('फिंगरप्रिंट जुळला नाही. कृपया MPIN वापरा.');
+        setError('फिंगरप्रिंट स्कॅन झाले नाही किंवा रद्द झाले. MPIN वापरा.');
       }
     } catch (err) {
-      console.error('Biometric error:', err);
-      setError('फिंगरप्रिंटमध्ये अडचण आली. कृपया MPIN टाका.');
+      console.error(err);
+      setError('फिंगरप्रिंट उघडता आले नाही. कृपया MPIN टाका.');
+    } finally {
+      // काहीही झाले तरी बटणे नेहमी चालूच राहतील
+      setIsBioLoading(false);
     }
   };
 
-  // नंबर दाबल्यावर
   const handleKeyPress = (num) => {
     if (pin.length < 4) {
       const newPin = pin + num;
@@ -44,13 +47,11 @@ const MpinScreen = ({ isSettingUp = false }) => {
     }
   };
 
-  // एक नंबर पुसणे (हटवा)
   const handleDelete = () => {
     setPin((prev) => prev.slice(0, -1));
     setError('');
   };
 
-  // पिन तपासणी
   const validatePin = (finalPin) => {
     if (isSettingUp) {
       setAppMpin(finalPin);
@@ -69,7 +70,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
 
   return (
     <IonPage>
-      {/* थेट संपूर्ण स्क्रीनवर फुल-कंट्रोल कंटेनर */}
       <div 
         className="fixed inset-0 w-full h-full bg-slate-50 flex flex-col items-center justify-between py-8 px-6 z-50 overflow-y-auto"
         style={{
@@ -77,8 +77,7 @@ const MpinScreen = ({ isSettingUp = false }) => {
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)'
         }}
       >
-        
-        {/* १. वरचा भाग: लोगो आणि शीर्षक */}
+        {/* १. शीर्ष भाग */}
         <div className="flex flex-col items-center text-center mt-2">
           <img
             src="/shahuraje1.png"
@@ -86,7 +85,7 @@ const MpinScreen = ({ isSettingUp = false }) => {
             className="w-20 h-20 mb-3 object-contain pointer-events-none"
           />
           <h2 className="text-xl font-bold text-gray-800">
-            {isSettingUp ? 'नवीन MPIN सेट करा' : ' MPIN टाका'}
+            {isSettingUp ? 'नवीन MPIN सेट करा' : 'MPIN टाका'}
           </h2>
           <p className="text-xs text-gray-500 mt-1">
             {isSettingUp 
@@ -94,7 +93,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
               : 'सुरक्षित लॉगिनसाठी पिन टाका किंवा फिंगरप्रिंट वापरा'}
           </p>
 
-          {/* पिनचे ४ ठिपके */}
           <div className="flex justify-center gap-4 mt-6 mb-2">
             {[0, 1, 2, 3].map((idx) => (
               <div
@@ -108,7 +106,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
             ))}
           </div>
 
-          {/* एरर मेसेज */}
           {error && (
             <p className="text-red-500 text-xs mt-2 font-semibold px-2">
               {error}
@@ -116,7 +113,7 @@ const MpinScreen = ({ isSettingUp = false }) => {
           )}
         </div>
 
-        {/* २. मधला भाग: रिअल टच कीपॅड */}
+        {/* २. कीपॅड */}
         <div className="w-full max-w-xs my-auto">
           <div className="grid grid-cols-3 gap-y-4 gap-x-6 justify-items-center">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
@@ -135,8 +132,12 @@ const MpinScreen = ({ isSettingUp = false }) => {
               <button
                 type="button"
                 onPointerDown={handleBiometricClick}
-                className="w-16 h-16 rounded-full bg-green-50 text-[#0c542b] border border-green-200 shadow-md active:bg-green-100 active:scale-90 transition-transform flex items-center justify-center touch-manipulation cursor-pointer"
-                title="फिंगरप्रिंट"
+                className={`w-16 h-16 rounded-full border shadow-md flex items-center justify-center touch-manipulation cursor-pointer transition-transform active:scale-90 ${
+                  isBioLoading 
+                    ? 'bg-gray-200 text-gray-400 border-gray-300 animate-pulse' 
+                    : 'bg-green-50 text-[#0c542b] border-green-200 active:bg-green-100'
+                }`}
+                title="फिंगरप्रिंट वापरा"
               >
                 <Fingerprint size={28} />
               </button>
@@ -144,7 +145,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
               <div className="w-16 h-16" />
             )}
 
-            {/* शून्य (0) */}
             <button
               type="button"
               onPointerDown={() => handleKeyPress('0')}
@@ -153,7 +153,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
               0
             </button>
 
-            {/* हटवा */}
             <button
               type="button"
               onPointerDown={handleDelete}
@@ -164,7 +163,7 @@ const MpinScreen = ({ isSettingUp = false }) => {
           </div>
         </div>
 
-        {/* ३. तळाचा भाग: दुसरा मोबाईल नंबर */}
+        {/* ३. दुसरा मोबाईल नंबर */}
         {!isSettingUp && (
           <div className="w-full text-center pb-2">
             <button
@@ -179,7 +178,6 @@ const MpinScreen = ({ isSettingUp = false }) => {
             </button>
           </div>
         )}
-
       </div>
     </IonPage>
   );

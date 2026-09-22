@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -9,6 +9,41 @@ import { lockApp } from '../mpinStorage';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const [userData, setUserData] = useState({
+    name: 'शेतकरी मित्र',
+    phone: '',
+    email: '',
+    initials: 'SM'
+  });
+
+  // localStorage मधून लॉगिन युझरची माहिती आणणे
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        const fullName = user.name || user.fullName || user.username || 'शेतकरी मित्र';
+        
+        // नावाची आद्याक्षरे (उदा. Vishnu Waghmode -> VW)
+        const nameParts = fullName.trim().split(' ');
+        let initials = 'SM';
+        if (nameParts.length >= 2) {
+          initials = `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+        } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+          initials = nameParts[0].slice(0, 2).toUpperCase();
+        }
+
+        setUserData({
+          name: fullName,
+          phone: user.phone || user.mobile || '',
+          email: user.email || '',
+          initials
+        });
+      }
+    } catch (e) {
+      console.error('Error reading user data:', e);
+    }
+  }, []);
 
   // प्रोफाईल मेनू ऑप्शन्स
   const menuOptions = [
@@ -33,7 +68,7 @@ const Profile = () => {
       <IonContent fullscreen className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-32">
           
-          {/* १. टॉप हेडर (Profile Header with Back Arrow) */}
+          {/* १. टॉप हेडर */}
           <div 
             className="bg-[#0c542b] px-4 pb-6 rounded-b-[40px] shadow-md relative"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}
@@ -54,14 +89,20 @@ const Profile = () => {
             </div>
             
             <div className="flex flex-col items-center relative z-10">
+              {/* डायनॅमिक आद्याक्षरे (Initials) */}
               <div className="w-20 h-20 bg-white rounded-full p-1 shadow-lg mb-3">
                 <div className="w-full h-full bg-green-100 rounded-full flex items-center justify-center text-[#0c542b] font-black text-2xl">
-                  RP
+                  {userData.initials}
                 </div>
               </div>
               
-              <h2 className="text-lg font-bold text-white">राजेश पाटील</h2>
-              <p className="text-xs text-green-100 mt-1">+91 98765 43210</p>
+              {/* डायनॅमिक नाव */}
+              <h2 className="text-lg font-bold text-white">{userData.name}</h2>
+              
+              {/* फोन नंबर किंवा ईमेल */}
+              <p className="text-xs text-green-100 mt-1">
+                {userData.phone ? `+91 ${userData.phone}` : userData.email}
+              </p>
             </div>
             
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -70,7 +111,7 @@ const Profile = () => {
 
           <div className="px-4 pt-6 space-y-4 flex-1">
             
-            {/* २. मेनू लिस्ट (Menu Options) */}
+            {/* २. मेनू लिस्ट */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {menuOptions.map((item, index) => (
                 <div 
@@ -94,7 +135,7 @@ const Profile = () => {
               ))}
             </div>
 
-            {/* ३. लॉगआउट बटण (Logout Button) */}
+            {/* ३. लॉगआउट बटण */}
             <button 
               onClick={handleLogout}
               className="w-full bg-red-50 text-red-600 border border-red-100 py-3.5 rounded-2xl font-bold text-sm shadow-sm hover:bg-red-100 active:scale-95 transition-all flex items-center justify-center mt-4"
