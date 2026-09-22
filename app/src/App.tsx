@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact, useIonRouter } from '@ionic/react';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
 
@@ -54,33 +54,77 @@ const TopRouteLoader = () => {
   );
 };
 
-/* २. अचूक बॅक बटण हँडलर (Ionic + Capacitor) */
-const BackButtonManager = () => {
-  const ionRouter = useIonRouter();
+/* २. नवीन अचूक बॅक बटण हँडलर (एक्झिट स्प्लॅश स्क्रीनसह) */
+const HardwareBackButtonHandler = () => {
+  const navigate = useNavigate();
   const location = useLocation();
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // Capacitor चा हार्डवेअर बॅक लिसनर
-    const listenerPromise = CapApp.addListener('backButton', () => {
-      const path = location.pathname;
+    const handleBackButton = (ev) => {
+      // प्रायोरिटी 100 देऊन ॲप डायरेक्ट क्लोज होण्यापासून थांबवणे
+      ev.detail.register(100, () => {
+        const currentPath = location.pathname;
 
-      // १. जर होम, लॉगिन किंवा स्प्लॅश असेल तरच ॲप बंद करा
-      if (path === '/home' || path === '/' || path === '/login') {
-        CapApp.exitApp();
-      } 
-      // २. इतर कोणत्याही पानावर (उदा. cart, orders, profile, productlisting) असेल तर मागे जा
-      else if (ionRouter.canGoBack()) {
-        ionRouter.back();
-      } else {
-        // फॉलबॅक: जर हिस्ट्री सापडली नाही तर थेट /home वर नेणे
-        window.history.back();
-      }
-    });
+        // १. जर होम, लॉगिन किंवा स्प्लॅश पेजवर असेल
+        if (currentPath === '/home' || currentPath === '/' || currentPath === '/login') {
+          if (!isExiting) {
+            setIsExiting(true); // एक्झिट स्क्रीन चालू करणे
+            
+            // अडीच सेकंदांनी ॲप खऱ्या अर्थाने बंद करणे
+            setTimeout(() => {
+              CapApp.exitApp();
+            }, 2500);
+          }
+        } 
+        // २. इतर कोणत्याही पानावर असेल तर मागे जाणे
+        else {
+          navigate(-1);
+        }
+      });
+    };
+
+    document.addEventListener('ionBackButton', handleBackButton);
 
     return () => {
-      listenerPromise.then(handler => handler.remove());
+      document.removeEventListener('ionBackButton', handleBackButton);
     };
-  }, [location.pathname, ionRouter]);
+  }, [location.pathname, navigate, isExiting]);
+
+  // जेव्हा युझर बाहेर पडत असेल तेव्हा ही स्क्रीन दिसेल
+  if (isExiting) {
+    return (
+      <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-gradient-to-b from-[#0c542b] to-[#052914] text-white transition-opacity duration-500">
+        
+        {/* पांढऱ्या गोलात तुमचा ब्रँड लोगो */}
+        <div className="bg-white p-2 rounded-full mb-6 shadow-[0_0_40px_rgba(34,197,94,0.3)] flex items-center justify-center w-24 h-24">
+          <img 
+            src="/shahuraje1.png" 
+            alt="लोगो" 
+            className="w-20 h-20 object-contain"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentNode.innerHTML = '<span class="text-3xl font-black text-[#0c542b]">SR</span>';
+            }}
+          />
+        </div>
+        
+        {/* खास शेती विषयक संदेश */}
+        <h2 className="text-2xl font-black text-white flex items-center shadow-sm">
+          जय बळीराजा! <span className="ml-2 text-2xl">🌾</span>
+        </h2>
+        
+        <p className="text-sm font-medium text-green-200 mt-2 text-center px-8 leading-relaxed">
+          शेती आपली संस्कृती, <br/> शेतकरी आपला अभिमान!
+        </p>
+        
+        {/* तळाला बारीक लोडिंग टेक्स्ट */}
+        <p className="absolute bottom-10 text-[10px] font-bold text-green-400/60 tracking-[0.2em] uppercase animate-pulse">
+          सुरक्षितपणे बाहेर पडत आहे...
+        </p>
+      </div>
+    );
+  }
 
   return null;
 };
@@ -89,7 +133,7 @@ const App = () => (
   <IonApp>
     <IonReactRouter>
       <TopRouteLoader />
-      <BackButtonManager />
+      <HardwareBackButtonHandler />
 
       <IonRouterOutlet>
         <Routes>
