@@ -10,7 +10,7 @@ const Home = () => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const userName = savedUser?.name || 'शेतकरी मित्र';
   
-  // नावावरून प्रोफाइल अक्षरे (उदा. राजेश पाटील -> RP)
+  // नावावरून प्रोफाइल अक्षरे (उदा. Vishnu Waghmode -> VW)
   const userInitials = userName
     .split(' ')
     .map(n => n[0])
@@ -26,7 +26,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-       const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
+        const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
         const data = await response.json();
         
         setProducts(data);
@@ -45,19 +45,27 @@ const Home = () => {
       <IonContent fullscreen className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-32">
           
-          {/* १. टॉप हेडर (Top Navigation Bar) */}
-          <div 
-            className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
-            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }}
-          >
-            <div className="flex items-center space-x-2.5">
-              <div className="flex items-center space-x-1.5 bg-[#0c542b]/10 px-2 py-1 rounded-xl">
-                <svg width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M29 45 C 17 43 10 31 12 19 C 22 21 31 31 29 45 Z" fill="#1b5e20" />
-                  <path d="M33 48 C 45 48 57 38 55 15 C 41 15 31 28 33 48 Z" fill="#0c542b" />
-                </svg>
-                <span className="font-black text-xs text-[#0c542b]">शाहूराजे</span>
-              </div>
+         {/* १. टॉप हेडर (सुधारित लोगो कंटेनर) */}
+<div 
+  className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
+  style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
+>
+  <div className="flex items-center space-x-3">
+    
+    {/* निश्चित आकाराचा गोलाकार लोगो बॉक्स */}
+    <div className="w-15 h-15 flex items-center justify-center overflow-hidden flex-shrink-0">
+      <img 
+        src="/shahuraje1.png" 
+        alt="शाहूराजे लोगो" 
+        style={{ width: '80px', height: '80px' }}
+        className="object-contain block"
+        onError={(e) => {
+          e.target.style.display = 'none';
+          e.target.parentNode.innerHTML = '<span class="text-xs font-black text-[#0c542b]">शाहूराजे</span>';
+        }}
+      />
+    </div>
+
               <div>
                 <p className="text-[11px] text-gray-500 font-medium">नमस्कार,</p>
                 <h2 className="text-sm font-bold text-gray-800 leading-tight">{userName}</h2>
@@ -66,14 +74,14 @@ const Home = () => {
 
             <div className="flex items-center space-x-3">
               <div 
-                onClick={() => navigate('/cart')}
+                onClick={() => navigate('/cart')} 
                 className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
               >
                 <ShoppingCart size={20} className="text-[#0c542b]" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">2</span>
               </div>
               <div 
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/profile')} 
                 className="w-9 h-9 bg-[#0c542b] text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md cursor-pointer"
               >
                 {userInitials}
@@ -113,7 +121,7 @@ const Home = () => {
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">उत्पादन श्रेण्या (Categories)</h3>
                 <span 
-                  onClick={() => navigate('/products')}
+                  onClick={() => navigate('/products')} 
                   className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
                 >
                   सर्व पहा
@@ -129,7 +137,7 @@ const Home = () => {
                 ].map((cat, idx) => (
                   <div 
                     key={idx} 
-                    onClick={() => navigate('/productlisting')}
+                    onClick={() => navigate('/productlisting')} 
                     className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center hover:border-[#0c542b] cursor-pointer transition-all"
                   >
                     <span className="text-2xl mb-1">{cat.icon}</span>
@@ -144,7 +152,7 @@ const Home = () => {
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">लोकप्रिय उत्पादने</h3>
                 <span 
-                  onClick={() => navigate('/productlisting')}
+                  onClick={() => navigate('/productlisting')} 
                   className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
                 >
                   सर्व पहा
@@ -163,8 +171,8 @@ const Home = () => {
                 <div className="grid grid-cols-2 gap-3.5">
                   {products.map((item) => (
                     <div 
-                      key={item._id}
-                      onClick={() => navigate('/product-detail')}
+                      key={item._id} 
+                      onClick={() => navigate('/product-detail')} 
                       className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md transition-all"
                     >
                       <div>
@@ -188,7 +196,7 @@ const Home = () => {
                           <span className="text-sm font-black text-[#0c542b]">₹{item.price}</span>
                         </div>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); alert('प्रॉडक्ट कार्टमध्ये जोडले!'); }}
+                          onClick={(e) => { e.stopPropagation(); alert('प्रॉडक्ट कार्टमध्ये जोडले!'); }} 
                           className="bg-[#0c542b] text-white p-2 rounded-xl hover:bg-[#083a1d] active:scale-95 transition-all shadow-sm"
                         >
                           <Plus size={16} />
@@ -203,34 +211,34 @@ const Home = () => {
         </div>
       </IonContent>
 
-      {/* ६. प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार (IonContent च्या बाहेर) */}
+      {/* ६. प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार */}
       <div 
         className="fixed left-4 right-4 bg-white/90 backdrop-blur-lg border border-gray-100 py-3 px-6 flex justify-between items-center z-50 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-3xl"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
       >
         <div 
-          onClick={() => navigate('/home')}
+          onClick={() => navigate('/home')} 
           className="flex flex-col items-center text-[#0c542b] cursor-pointer transition-transform active:scale-95"
         >
           <HomeIcon size={22} />
           <span className="text-[10px] font-bold mt-1">होम</span>
         </div>
         <div 
-          onClick={() => navigate('/orders')}
+          onClick={() => navigate('/orders')} 
           className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
         >
           <Package size={22} />
           <span className="text-[10px] font-medium mt-1">ऑर्डर्स</span>
         </div>
         <div 
-          onClick={() => navigate('/cart')}
+          onClick={() => navigate('/cart')} 
           className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
         >
           <ShoppingCart size={22} />
           <span className="text-[10px] font-medium mt-1">कार्ट</span>
         </div>
         <div 
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate('/profile')} 
           className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
         >
           <User size={22} />
