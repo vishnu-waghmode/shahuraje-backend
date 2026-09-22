@@ -137,39 +137,52 @@ const Orders = () => {
         </div>
       </IonContent>
 
-      {/* प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार */}
-      <div 
-        className="fixed left-4 right-4 bg-white/90 backdrop-blur-lg border border-gray-100 py-3 px-6 flex justify-between items-center z-50 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-3xl"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-      >
-        <div 
-          onClick={() => navigate('/home')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <HomeIcon size={22} />
-          <span className="text-[10px] font-medium mt-1">होम</span>
-        </div>
-        <div 
-          className="flex flex-col items-center text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <Package size={22} />
-          <span className="text-[10px] font-bold mt-1">ऑर्डर्स</span>
-        </div>
-        <div 
-          onClick={() => navigate('/cart')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <ShoppingCart size={22} />
-          <span className="text-[10px] font-medium mt-1">कार्ट</span>
-        </div>
-        <div 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <User size={22} />
-          <span className="text-[10px] font-medium mt-1">प्रोफाईल</span>
-        </div>
-      </div>
+      {/* प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार (Orders Page) */}
+<div 
+  className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+  style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
+>
+  {/* होम बटण */}
+  <div 
+    onClick={() => navigate('/home')} 
+    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <HomeIcon size={22} className="stroke-[2]" />
+    <span className="text-[10px] font-semibold mt-0.5">होम</span>
+  </div>
+
+  {/* ऑर्डर्स बटण (सध्या ॲक्टिव्ह - हलक्या हिरव्या बॅकग्राउंडसह) */}
+  <div 
+    onClick={() => navigate('/orders')} 
+    className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
+  >
+    <Package size={22} className="stroke-[2.5]" />
+    <span className="text-[10px] font-black mt-0.5 tracking-wide">ऑर्डर्स</span>
+  </div>
+
+  {/* कार्ट बटण (बॅजसह) */}
+  <div 
+    onClick={() => navigate('/cart')} 
+    className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <div className="relative">
+      <ShoppingCart size={22} className="stroke-[2]" />
+      <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
+        2
+      </span>
+    </div>
+    <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
+  </div>
+
+  {/* प्रोफाईल बटण */}
+  <div 
+    onClick={() => navigate('/profile')} 
+    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <User size={22} className="stroke-[2]" />
+    <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
+  </div>
+</div>
     </IonPage>
   );
 };

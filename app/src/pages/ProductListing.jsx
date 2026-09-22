@@ -1,31 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, ShoppingCart, Star, Plus, SlidersHorizontal } from 'lucide-react';
 
 const ProductListing = () => {
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
+  // कॅटेगरीज कंटेनरसाठी रेफरन्स (Auto-scroll साठी)
+  const categoryScrollRef = useRef(null);
+
+  // URL पॅरामीटर्स
+  const queryParams = new URLSearchParams(location.search);
+  const categoryFromUrl = queryParams.get('category');
+  const searchFromUrl = queryParams.get('search');
+
   // १. स्टेट्स (States)
-  const [products, setProducts] = useState([]); // डेटाबेसमधील उत्पादने
-  const [loading, setLoading] = useState(true); // लोडिंग स्टेट
-  const [searchQuery, setSearchQuery] = useState(''); // सर्च बारसाठी
-  const [activeCategory, setActiveCategory] = useState('सर्व'); // निवडलेली कॅटेगरी
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(searchFromUrl || '');
+  const [activeCategory, setActiveCategory] = useState(categoryFromUrl || 'सर्व');
 
   // कॅटेगरीजची यादी
-  const categoriesList = ['सर्व', 'खते', 'कीटकनाशक', 'बियाणे', 'सिंचन'];
+  const categoriesList = ['सर्व', 'कीटकनाशक', 'खते', 'बियाणे', 'सिंचन'];
 
-  // २. बॅकएंडवरून डेटा आणणे (Fetch Products)
+  // २. बॅकएंडवरून उत्पादने मिळवणे
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-       const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
+        const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
         const data = await response.json();
-        
         setProducts(data);
         setLoading(false);
       } catch (error) {
-        console.error('प्रॉडक्ट्स मिळवताना एरर आला:', error);
+        console.error('प्रॉडक्ट्स लोड करताना एरर आला:', error);
         setLoading(false);
       }
     };
@@ -33,14 +41,52 @@ const ProductListing = () => {
     fetchProducts();
   }, []);
 
-  // ३. सर्च आणि कॅटेगरीनुसार उत्पादने फिल्टर करणे
-  const filteredProducts = products.filter(item => {
-    // कॅटेगरी फिल्टर
-    const matchesCategory = activeCategory === 'सर्व' || item.category === activeCategory;
-    // सर्च फिल्टर (नावामध्ये किंवा कॅटेगरीमध्ये शब्द आहे का)
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
+  // ३. ऑटोमॅटिक कॅटेगरी शोधणे आणि ती टॅब स्क्रीनवर पुढे स्क्रोल करणे
+  useEffect(() => {
+    if (products.length > 0) {
+      if (searchFromUrl) {
+        const term = searchFromUrl.toLowerCase().trim();
+        
+        // आधी नावाने मॅच होणारे उत्पादन शोधणे (उदा. Tynzer / टायझर)
+        const matched = products.find(p => 
+          p.name?.toLowerCase().includes(term) ||
+          p.category?.toLowerCase().includes(term)
+        );
+
+        if (matched && matched.category) {
+          setActiveCategory(matched.category);
+          // निवडलेली कॅटेगरी स्क्रीनवर सर्वात आधी दिसण्यासाठी स्क्रोल करणे
+          setTimeout(() => {
+            const el = document.getElementById(`cat-btn-${matched.category}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+          }, 150);
+        }
+      } else if (categoryFromUrl) {
+        setActiveCategory(categoryFromUrl);
+        setTimeout(() => {
+          const el = document.getElementById(`cat-btn-${categoryFromUrl}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }, 150);
+      }
+    }
+  }, [products, searchFromUrl, categoryFromUrl]);
+
+  // ४. फिल्टरिंग
+  const filteredProducts = products.filter((item) => {
+    const matchesCategory = 
+      activeCategory === 'सर्व' || 
+      item.category?.trim().toLowerCase() === activeCategory.trim().toLowerCase();
+
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch = 
+      !query || 
+      item.name?.toLowerCase().includes(query) ||
+      item.category?.toLowerCase().includes(query);
+
     return matchesCategory && matchesSearch;
   });
 
@@ -49,7 +95,7 @@ const ProductListing = () => {
       <IonContent fullscreen className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-10">
           
-          {/* १. टॉप हेडर (Back Button & Title) */}
+          {/* १. टॉप हेडर */}
           <div className="bg-white px-4 pt-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button 
@@ -58,7 +104,9 @@ const ProductListing = () => {
               >
                 <ArrowLeft size={20} />
               </button>
-              <h1 className="text-base font-black text-gray-800">सर्व उत्पादने / औषधे</h1>
+              <h1 className="text-base font-black text-gray-800">
+                {activeCategory === 'सर्व' ? 'सर्व उत्पादने / औषधे' : `${activeCategory}`}
+              </h1>
             </div>
 
             <div 
@@ -72,7 +120,7 @@ const ProductListing = () => {
 
           <div className="px-4 pt-4 space-y-4">
             
-            {/* २. सर्च बार आणि फिल्टर */}
+            {/* २. सर्च बार */}
             <div className="flex items-center space-x-2">
               <div className="relative flex-1">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
@@ -91,15 +139,22 @@ const ProductListing = () => {
               </button>
             </div>
 
-            {/* ३. कॅटेगरी फिल्टर्स (Tags) - आता हे डायनॅमिक आहेत */}
-            <div className="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
+            {/* ३. कॅटेगरी फिल्टर्स (ऑटो-फोकस आणि ॲक्टिव्ह इफेक्टसह) */}
+            <div 
+              ref={categoryScrollRef}
+              className="flex space-x-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+            >
               {categoriesList.map((tab, idx) => (
                 <button 
+                  id={`cat-btn-${tab}`}
                   key={idx}
-                  onClick={() => setActiveCategory(tab)}
+                  onClick={() => {
+                    setActiveCategory(tab);
+                    setSearchQuery('');
+                  }}
                   className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm transition-all ${
                     activeCategory === tab 
-                      ? 'bg-[#0c542b] text-white' 
+                      ? 'bg-[#0c542b] text-white ring-2 ring-[#0c542b]/20' 
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
@@ -108,7 +163,7 @@ const ProductListing = () => {
               ))}
             </div>
 
-            {/* ४. प्रॉडक्ट्स लिस्ट (Grid View) */}
+            {/* ४. उत्पादने ग्रिड */}
             {loading ? (
               <div className="flex justify-center py-12">
                 <span className="text-sm font-bold text-[#0c542b]">उत्पादने लोड होत आहेत...</span>
@@ -118,12 +173,11 @@ const ProductListing = () => {
                 {filteredProducts.length > 0 ? (
                   filteredProducts.map((item) => (
                     <div 
-                      key={item._id} // MongoDB आयडी
+                      key={item._id}
                       onClick={() => navigate('/product-detail')}
                       className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md transition-all"
                     >
                       <div>
-                        {/* प्रॉडक्ट इमेज */}
                         <div className="w-full h-32 bg-gray-50 rounded-xl mb-2.5 overflow-hidden flex items-center justify-center relative">
                           <img 
                             src={item.image || 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=300'} 

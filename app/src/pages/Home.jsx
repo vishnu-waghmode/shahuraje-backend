@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Home as HomeIcon, User, Package, ChevronRight, Star, Plus } from 'lucide-react';
+import { Search, ShoppingCart, Home as HomeIcon, User, Package, Star, Plus } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,9 +18,10 @@ const Home = () => {
     .substring(0, 2)
     .toUpperCase();
 
-  // २. प्रॉडक्ट्स आणि लोडिंगसाठी स्टेट
+  // २. प्रॉडक्ट्स, लोडिंग आणि डायनॅमिक सर्चसाठी स्टेट्स
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // ३. बॅकएंडवरून डेटा आणणे (Fetch API)
   useEffect(() => {
@@ -40,19 +41,28 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  // ४. सर्च बारमधील शब्दांनुसार उत्पादने लाईव्ह फिल्टर करणे
+  const displayedProducts = products.filter((item) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+
+    const matchName = item.name?.toLowerCase().includes(query);
+    const matchCategory = item.category?.toLowerCase().includes(query);
+    return matchName || matchCategory;
+  });
+
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-32">
           
-         {/* १. टॉप हेडर (सुधारित लोगो कंटेनर) */}
-<div 
-  className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
-  style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
->
-  <div className="flex items-center space-x-3">
-    
-    {/* निश्चित आकाराचा गोलाकार लोगो बॉक्स */}
+          {/* १. टॉप हेडर (लोगो आणि प्रोफाइल) */}
+          <div 
+            className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
+          >
+            <div className="flex items-center space-x-3">
+             {/*  लोगो बॉक्स */}
     <div className="w-15 h-15 flex items-center justify-center overflow-hidden flex-shrink-0">
       <img 
         src="/shahuraje1.png" 
@@ -91,19 +101,34 @@ const Home = () => {
 
           <div className="px-4 pt-4 space-y-4">
             
-            {/* २. सर्च बार (Search Bar) */}
+            {/* २. डायनॅमिक सर्च बार (Live Filter + Clear '✕' Button) */}
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                 <Search size={18} />
               </span>
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim() !== '') {
+                    navigate(`/productlisting?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
                 placeholder="खते, बियाणे, औषधे शोधा..." 
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl font-medium text-sm text-gray-800 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#0c542b]"
+                className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-2xl font-medium text-sm text-gray-800 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#0c542b] transition-all"
               />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
-            {/* ३. आकर्षक बॅनर (Promotional Banner) */}
+            {/* ३. आकर्षक बॅनर */}
             <div className="bg-gradient-to-r from-[#0c542b] to-[#1b5e20] rounded-2xl p-4 text-white shadow-md relative overflow-hidden flex items-center justify-between">
               <div className="z-10 max-w-[65%]">
                 <span className="bg-white/20 text-xs px-2.5 py-0.5 rounded-full font-bold">विशेष ऑफर</span>
@@ -116,12 +141,12 @@ const Home = () => {
               <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
             </div>
 
-            {/* ४. कॅटेगरीज (Categories Grid) */}
+            {/* ४. उत्पादन श्रेण्या (कॅटेगरीज) */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">उत्पादन श्रेण्या (Categories)</h3>
                 <span 
-                  onClick={() => navigate('/products')} 
+                  onClick={() => navigate('/productlisting')} 
                   className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
                 >
                   सर्व पहा
@@ -137,8 +162,8 @@ const Home = () => {
                 ].map((cat, idx) => (
                   <div 
                     key={idx} 
-                    onClick={() => navigate('/productlisting')} 
-                    className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center hover:border-[#0c542b] cursor-pointer transition-all"
+                    onClick={() => navigate(`/productlisting?category=${encodeURIComponent(cat.name)}`)} 
+                    className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center hover:border-[#0c542b] cursor-pointer transition-all active:scale-95"
                   >
                     <span className="text-2xl mb-1">{cat.icon}</span>
                     <span className="text-xs font-bold text-gray-700">{cat.name}</span>
@@ -147,10 +172,12 @@ const Home = () => {
               </div>
             </div>
 
-            {/* ५. लोकप्रिय उत्पादने (Popular Products Grid) */}
+            {/* ५. उत्पादनांची यादी (डायनॅमिक फिल्टर निकालांसह) */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-800 text-base">लोकप्रिय उत्पादने</h3>
+                <h3 className="font-bold text-gray-800 text-base">
+                  {searchQuery ? `"${searchQuery}" चे निकाल` : 'लोकप्रिय उत्पादने'}
+                </h3>
                 <span 
                   onClick={() => navigate('/productlisting')} 
                   className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
@@ -163,13 +190,13 @@ const Home = () => {
                 <div className="flex justify-center py-10">
                   <span className="text-sm font-bold text-[#0c542b]">उत्पादने लोड होत आहेत...</span>
                 </div>
-              ) : products.length === 0 ? (
+              ) : displayedProducts.length === 0 ? (
                 <div className="text-center py-10 text-gray-500 font-medium text-sm">
-                  कोणतीही उत्पादने उपलब्ध नाहीत.
+                  कोणतीही उत्पादने सापडली नाहीत.
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3.5">
-                  {products.map((item) => (
+                  {displayedProducts.map((item) => (
                     <div 
                       key={item._id} 
                       onClick={() => navigate('/product-detail')} 
@@ -212,39 +239,51 @@ const Home = () => {
       </IonContent>
 
       {/* ६. प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार */}
-      <div 
-        className="fixed left-4 right-4 bg-white/90 backdrop-blur-lg border border-gray-100 py-3 px-6 flex justify-between items-center z-50 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-3xl"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-      >
-        <div 
-          onClick={() => navigate('/home')} 
-          className="flex flex-col items-center text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <HomeIcon size={22} />
-          <span className="text-[10px] font-bold mt-1">होम</span>
-        </div>
-        <div 
-          onClick={() => navigate('/orders')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <Package size={22} />
-          <span className="text-[10px] font-medium mt-1">ऑर्डर्स</span>
-        </div>
-        <div 
-          onClick={() => navigate('/cart')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <ShoppingCart size={22} />
-          <span className="text-[10px] font-medium mt-1">कार्ट</span>
-        </div>
-        <div 
-          onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-transform active:scale-95"
-        >
-          <User size={22} />
-          <span className="text-[10px] font-medium mt-1">प्रोफाईल</span>
-        </div>
-      </div>
+<div 
+  className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+  style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
+>
+  {/* होम बटण (सध्या ॲक्टिव्ह - हलक्या हिरव्या बॅकग्राउंडसह) */}
+  <div 
+    onClick={() => navigate('/home')} 
+    className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
+  >
+    <HomeIcon size={22} className="stroke-[2.5]" />
+    <span className="text-[10px] font-black mt-0.5 tracking-wide">होम</span>
+  </div>
+
+  {/* ऑर्डर्स बटण */}
+  <div 
+    onClick={() => navigate('/orders')} 
+    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <Package size={22} className="stroke-[2]" />
+    <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
+  </div>
+
+  {/* कार्ट बटण (बॅजसह) */}
+  <div 
+    onClick={() => navigate('/cart')} 
+    className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <div className="relative">
+      <ShoppingCart size={22} className="stroke-[2]" />
+      <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
+        2
+      </span>
+    </div>
+    <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
+  </div>
+
+  {/* प्रोफाईल बटण */}
+  <div 
+    onClick={() => navigate('/profile')} 
+    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+  >
+    <User size={22} className="stroke-[2]" />
+    <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
+  </div>
+</div>
 
     </IonPage>
   );
