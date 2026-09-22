@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+import { App as CapApp } from '@capacitor/app';
 
 /* Ionic चे CSS */
 import '@ionic/react/css/core.css';
@@ -30,7 +31,7 @@ import MpinScreen from './pages/MpinScreen';
 
 setupIonicReact();
 
-/* १. प्रत्येक पानावर जाताना वर दिसणारा स्लीक हिरवा लोडर */
+/* १. टॉप प्रोग्रेस बार लोडर */
 const TopRouteLoader = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,7 @@ const TopRouteLoader = () => {
     setLoading(true);
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 250); // २५० मिलिसेकंदात स्मूथली गायब होईल
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [location.pathname, location.search]);
@@ -53,46 +54,54 @@ const TopRouteLoader = () => {
   );
 };
 
+/* २. मोबाईल हार्डवेअर बॅक बटण हँडलर */
+const HardwareBackButtonHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+      const currentPath = location.pathname;
+
+      // जर युझर होम, स्प्लॅश किंवा लॉगिनवर असेल तर ॲप बंद होईल
+      if (currentPath === '/home' || currentPath === '/' || currentPath === '/login') {
+        CapApp.exitApp();
+      } else {
+        // इतर पानांवर (Cart, Profile, ProductListing इत्यादी) असेल तर मागील पानावर नेणे
+        navigate(-1);
+      }
+    });
+
+    return () => {
+      backButtonListener.then(handler => handler.remove());
+    };
+  }, [location, navigate]);
+
+  return null;
+};
+
 const App = () => (
   <IonApp>
     <IonReactRouter>
-      {/* राऊटरच्या आत लोडर सक्रिय केला */}
+      {/* १. टॉप लोडर */}
       <TopRouteLoader />
+
+      {/* २. मोबाईल बॅक बटण लिसनर */}
+      <HardwareBackButtonHandler />
 
       <IonRouterOutlet>
         <Routes>
-          {/* मुख्य Splash स्क्रीन */}
           <Route path="/" element={<Splash />} />
-          
-          {/* शेतकरी लॉगिन स्क्रीन */}
           <Route path="/login" element={<Login />} />
-
-          {/* शेतकरी नोंदणी (Register) स्क्रीन */}
           <Route path="/register" element={<Register />} />
-
-          {/* MPIN स्क्रीन */}
           <Route path="/mpin" element={<MpinScreen />} />
           <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
-
-          {/* home page */}
           <Route path="/home" element={<Home />} />
-
-          {/* product listing */}
           <Route path="/productlisting" element={<ProductListing />} />
-
-          {/* product details */}
           <Route path="/product-detail" element={<ProductDetail />} />
-
-          {/* cart */}
           <Route path="/cart" element={<Cart />} />
-
-          {/* orders */}
           <Route path="/orders" element={<Orders />} />
-
-          {/* profile */}
           <Route path="/profile" element={<Profile />} />
-
-          {/* forgot password */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       </IonRouterOutlet>
