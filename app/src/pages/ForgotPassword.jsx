@@ -20,7 +20,7 @@ const ForgotPassword = () => {
     setMsg({ type: '', text: '' });
 
     try {
-      const res = await fetch('http://192.168.1.42:5000/api/users/send-otp', {
+      const res = await fetch('https://shahuraje-backend.onrender.com/api/users/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -46,7 +46,7 @@ const ForgotPassword = () => {
     setMsg({ type: '', text: '' });
 
     try {
-      const res = await fetch('http://192.168.1.42:5000/api/users/reset-password', {
+      const res = await fetch('https://shahuraje-backend.onrender.com/api/users/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword })
