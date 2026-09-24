@@ -13,19 +13,27 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
 
-  // स्टेप १: OTP पाठवणे
+ // स्टेप १: OTP पाठवणे (टाईमआउटसह)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMsg({ type: '', text: '' });
 
+    // १५ सेकंदाचा टाईमआउट सेट करणे, जेणेकरून ॲप अडकून पडणार नाही
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const res = await fetch('https://shahuraje-backend.onrender.com/api/users/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       const data = await res.json();
+      
       if (res.ok) {
         setStep(2);
         setMsg({ type: 'success', text: 'OTP तुमच्या ईमेलवर पाठवला आहे!' });
@@ -33,7 +41,11 @@ const ForgotPassword = () => {
         setMsg({ type: 'error', text: data.error || 'अडचण आली.' });
       }
     } catch (err) {
-      setMsg({ type: 'error', text: 'सर्व्हरशी संपर्क होऊ शकला नाही.' });
+      if (err.name === 'AbortError') {
+        setMsg({ type: 'error', text: 'सर्व्हरकडून रिस्पॉन्स मिळायला वेळ लागत आहे. कृपया पुन्हा प्रयत्न करा.' });
+      } else {
+        setMsg({ type: 'error', text: 'सर्व्हरशी संपर्क होऊ शकला नाही.' });
+      }
     } finally {
       setLoading(false);
     }
