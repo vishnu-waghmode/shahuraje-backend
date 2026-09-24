@@ -29,6 +29,9 @@ import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import MpinScreen from './pages/MpinScreen';
 
+/* १. CartProvider इम्पोर्ट केला (तुमच्या CartContext.js फाईलचा पाथ तपासा) */
+import { CartProvider } from './CartContext';
+
 setupIonicReact();
 
 /* १. टॉप प्रोग्रेस बार लोडर */
@@ -131,27 +134,30 @@ const HardwareBackButtonHandler = () => {
 
 const App = () => (
   <IonApp>
-    <IonReactRouter>
-      <TopRouteLoader />
-      <HardwareBackButtonHandler />
+    {/* २. संपूर्ण ॲपला CartProvider ने रॅप (Wrap) केले */}
+    <CartProvider>
+      <IonReactRouter>
+        <TopRouteLoader />
+        <HardwareBackButtonHandler />
 
-      <IonRouterOutlet>
-        <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/mpin" element={<MpinScreen />} />
-          <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/productlisting" element={<ProductListing />} />
-          <Route path="/product-detail" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-        </Routes>
-      </IonRouterOutlet>
-    </IonReactRouter>
+        <IonRouterOutlet>
+          <Routes>
+            <Route path="/" element={<Splash />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/mpin" element={<MpinScreen />} />
+            <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/productlisting" element={<ProductListing />} />
+            <Route path="/product-detail" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+          </Routes>
+        </IonRouterOutlet>
+      </IonReactRouter>
+    </CartProvider>
   </IonApp>
 );
 

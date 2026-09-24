@@ -3,13 +3,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Brevo ट्रान्सपोर्टर (सुधारित)
+// Gmail ट्रान्सपोर्टर
 const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
+    service: 'gmail',
     auth: {
-        user: 'vishnuwaghmode43@gmail.com', // तुमचा Brevo/Gmail अकाउंटचा ईमेल
-        pass: 'bskQTmlSL0A1649' // तुमची नवीन Brevo SMTP Key
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -91,7 +90,7 @@ exports.sendOtp = async (req, res) => {
         await user.save();
 
         const mailOptions = {
-            from: `"शाहूराजे कृषी केंद्र" <vishnuwaghmode43@gmail.com>`,
+            from: `"शाहूराजे कृषी केंद्र" <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: 'पासवर्ड रीसेट करण्यासाठी OTP - शाहूराजे कृषी केंद्र',
             html: `
@@ -111,7 +110,6 @@ exports.sendOtp = async (req, res) => {
         res.status(200).json({ message: 'OTP तुमच्या ईमेलवर पाठवला गेला आहे!' });
 
     } catch (error) {
-        console.error('Email send error:', error);
         res.status(500).json({ error: 'ईमेल पाठवताना एरर आला', details: error.message });
     }
 };

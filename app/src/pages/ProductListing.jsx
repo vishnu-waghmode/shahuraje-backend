@@ -3,11 +3,17 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, ShoppingCart, Star, Plus, SlidersHorizontal } from 'lucide-react';
 
+// १. CartContext मधून useCart जोडले
+import { useCart } from '../CartContext';
+
 const ProductListing = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // कॅटेगरीज कंटेनरसाठी रेफरन्स (Auto-scroll साठी)
+  // कार्टमधील डेटा आणि ॲड फंक्शन
+  const { cartItems, addToCart } = useCart();
+
+  // कॅटेगरीज कंटेनरसाठी रेफरन्स
   const categoryScrollRef = useRef(null);
 
   // URL पॅरामीटर्स
@@ -15,16 +21,15 @@ const ProductListing = () => {
   const categoryFromUrl = queryParams.get('category');
   const searchFromUrl = queryParams.get('search');
 
-  // १. स्टेट्स (States)
+  // स्टेट्स
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl || '');
   const [activeCategory, setActiveCategory] = useState(categoryFromUrl || 'सर्व');
 
-  // कॅटेगरीजची यादी
   const categoriesList = ['सर्व', 'कीटकनाशक', 'खते', 'बियाणे', 'सिंचन'];
 
-  // २. बॅकएंडवरून उत्पादने मिळवणे
+  // बॅकएंडवरून उत्पादने मिळवणे
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -41,13 +46,11 @@ const ProductListing = () => {
     fetchProducts();
   }, []);
 
-  // ३. ऑटोमॅटिक कॅटेगरी शोधणे आणि ती टॅब स्क्रीनवर पुढे स्क्रोल करणे
+  // ऑटोमॅटिक कॅटेगरी शोधणे आणि स्क्रोल करणे
   useEffect(() => {
     if (products.length > 0) {
       if (searchFromUrl) {
         const term = searchFromUrl.toLowerCase().trim();
-        
-        // आधी नावाने मॅच होणारे उत्पादन शोधणे (उदा. Tynzer / टायझर)
         const matched = products.find(p => 
           p.name?.toLowerCase().includes(term) ||
           p.category?.toLowerCase().includes(term)
@@ -55,7 +58,6 @@ const ProductListing = () => {
 
         if (matched && matched.category) {
           setActiveCategory(matched.category);
-          // निवडलेली कॅटेगरी स्क्रीनवर सर्वात आधी दिसण्यासाठी स्क्रोल करणे
           setTimeout(() => {
             const el = document.getElementById(`cat-btn-${matched.category}`);
             if (el) {
@@ -75,7 +77,7 @@ const ProductListing = () => {
     }
   }, [products, searchFromUrl, categoryFromUrl]);
 
-  // ४. फिल्टरिंग
+  // फिल्टरिंग
   const filteredProducts = products.filter((item) => {
     const matchesCategory = 
       activeCategory === 'सर्व' || 
@@ -96,7 +98,10 @@ const ProductListing = () => {
         <div className="w-full min-h-full flex flex-col pb-10">
           
           {/* १. टॉप हेडर */}
-          <div className="bg-white px-4 pt-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between">
+          <div 
+            className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
+            style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
+          >
             <div className="flex items-center space-x-3">
               <button 
                 onClick={() => navigate('/home')}
@@ -114,7 +119,11 @@ const ProductListing = () => {
               className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
             >
               <ShoppingCart size={20} className="text-[#0c542b]" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">2</span>
+              {cartItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {cartItems.length}
+                </span>
+              )}
             </div>
           </div>
 
@@ -133,13 +142,21 @@ const ProductListing = () => {
                   placeholder="उत्पादन किंवा औषध शोधा..." 
                   className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl font-medium text-xs text-gray-800 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#0c542b]"
                 />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-700 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
               <button className="bg-white border border-gray-200 p-3 rounded-2xl text-[#0c542b] shadow-sm hover:bg-gray-50">
                 <SlidersHorizontal size={20} />
               </button>
             </div>
 
-            {/* ३. कॅटेगरी फिल्टर्स (ऑटो-फोकस आणि ॲक्टिव्ह इफेक्टसह) */}
+            {/* ३. कॅटेगरी फिल्टर्स */}
             <div 
               ref={categoryScrollRef}
               className="flex space-x-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
@@ -173,9 +190,10 @@ const ProductListing = () => {
                 {filteredProducts.length > 0 ? (
                   filteredProducts.map((item) => (
                     <div 
-                      key={item._id}
-                      onClick={() => navigate('/product-detail')}
-                      className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md transition-all"
+                      key={item._id || item.id}
+                      /* महत्वाचा बदल: state द्वारे संपूर्ण प्रॉडक्ट पाठवले आहे */
+                      onClick={() => navigate('/product-detail', { state: { product: item } })}
+                      className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
                     >
                       <div>
                         <div className="w-full h-32 bg-gray-50 rounded-xl mb-2.5 overflow-hidden flex items-center justify-center relative">
@@ -189,14 +207,22 @@ const ProductListing = () => {
                           </span>
                         </div>
                         
-                        <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md">{item.category}</span>
-                        <h4 className="font-bold text-xs text-gray-800 mt-1.5 line-clamp-2 leading-snug">{item.name}</h4>
+                        <span className="text-[9px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md">
+                          {item.category}
+                        </span>
+                        <h4 className="font-bold text-xs text-gray-800 mt-1.5 line-clamp-2 leading-snug">
+                          {item.name}
+                        </h4>
                       </div>
 
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-sm font-black text-[#0c542b]">₹{item.price}</span>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); alert('प्रॉडक्ट कार्टमध्ये जोडले!'); }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            addToCart(item);
+                            alert('प्रॉडक्ट कार्टमध्ये जोडले!'); 
+                          }}
                           className="bg-[#0c542b] text-white p-2 rounded-xl hover:bg-[#083a1d] active:scale-95 transition-all shadow-sm"
                         >
                           <Plus size={16} />
