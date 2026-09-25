@@ -124,7 +124,7 @@ const Home = () => {
 
   // const isRaining = true;
 
-  const isWindy = !isRaining && Boolean(weather && weather.wind_speed_10m >= 15);
+  const isWindy = !isRaining && Boolean(weather && weather.wind_speed_10m >= 26);
 
   // २. हवामानानुसार डायनॅमिक इमेज, बॅज आणि मजकूर
   let weatherTheme = {
