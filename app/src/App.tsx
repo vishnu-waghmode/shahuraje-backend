@@ -28,6 +28,7 @@ import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import MpinScreen from './pages/MpinScreen';
+import WeatherDetail from './pages/WeatherDetail';
 
 /* १. CartProvider इम्पोर्ट केला (तुमच्या CartContext.js फाईलचा पाथ तपासा) */
 import { CartProvider } from './CartContext';
@@ -77,7 +78,7 @@ const HardwareBackButtonHandler = () => {
             // अडीच सेकंदांनी ॲप खऱ्या अर्थाने बंद करणे
             setTimeout(() => {
               CapApp.exitApp();
-            }, 2500);
+            }, 2000);
           }
         } 
         // २. इतर कोणत्याही पानावर असेल तर मागे जाणे
@@ -154,6 +155,7 @@ const App = () => (
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/weather-detail" element={<WeatherDetail />} />
           </Routes>
         </IonRouterOutlet>
       </IonReactRouter>

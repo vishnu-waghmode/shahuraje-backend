@@ -121,13 +121,14 @@ const Home = () => {
       (weather.weather_code >= 80 && weather.weather_code <= 82)
     )
   );
-  // const isRaining = true; // पाऊस चालू होईल 
- 
+
+  // const isRaining = true;
+
   const isWindy = !isRaining && Boolean(weather && weather.wind_speed_10m >= 15);
 
   // २. हवामानानुसार डायनॅमिक इमेज, बॅज आणि मजकूर
   let weatherTheme = {
-    bgImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80', // सुंदर ऊन आणि हिरवे शेत
+    bgImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
     statusBadge: '☀️ स्वच्छ हवामान',
     subText: 'आज हवामान अगदी प्रसन्न आहे',
     advisoryTitle: 'आज पिकांवर फवारणीसाठी अतिशय उत्तम वेळ आहे!',
@@ -137,7 +138,6 @@ const Home = () => {
 
   if (isRaining) {
     weatherTheme = {
-      // पावसात छत्री घेऊन शेतात चालणारी व्यक्ती / पावसाळी शेत
       bgImage: 'https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=800&q=80',
       statusBadge: '🌧️ पाऊस सुरू आहे',
       subText: 'पावसामुळे वातावरणात चांगला गारवा आहे',
@@ -147,7 +147,6 @@ const Home = () => {
     };
   } else if (isWindy) {
     weatherTheme = {
-      // वाऱ्याने डोलणारे शेत / वारा
       bgImage: 'https://images.unsplash.com/photo-1505672678563-1498064a383d?w=800&q=80',
       statusBadge: '💨 जोराचा वारा',
       subText: `वाऱ्याचा वेग ${weather?.wind_speed_10m || 0} km/h इतका आहे`,
@@ -162,7 +161,7 @@ const Home = () => {
       <IonContent fullscreen className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-32">
           
-          {/* हेडर */}
+          {/* १. हेडर */}
           <div 
             className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center justify-between"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
@@ -209,7 +208,7 @@ const Home = () => {
 
           <div className="px-4 pt-4 space-y-4">
             
-            {/* सर्च बार */}
+            {/* २. सर्च बार */}
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                 <Search size={18} />
@@ -236,7 +235,7 @@ const Home = () => {
               )}
             </div>
 
-            {/* बॅनर कॅरोसेल */}
+            {/* ३. बॅनर कॅरोसेल */}
             <div className="relative overflow-hidden rounded-3xl shadow-lg h-44">
               <div 
                 className="flex h-full transition-transform duration-700 ease-out"
@@ -282,7 +281,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* उत्पादन श्रेण्या */}
+            {/* ४. उत्पादन श्रेण्या */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">उत्पादन श्रेण्या (Categories)</h3>
@@ -313,7 +312,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* लोकप्रिय उत्पादने (फक्त ४ उत्पादने) */}
+            {/* ५. लोकप्रिय उत्पादने (फक्त ४ उत्पादने) */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">
@@ -393,8 +392,11 @@ const Home = () => {
               )}
             </div>
 
-            {/* 🔥 टॉप-लेव्हल लाईव्ह हवामान कार्ड (हवामानानुसार बदलणारी इमेज + पाऊस व वारा ॲनिमेशन) */}
-            <div className="relative overflow-hidden rounded-3xl p-4.5 text-white shadow-xl border border-white/20 select-none min-h-[205px] flex flex-col justify-between">
+            {/* ६. 🔥 लाईव्ह हवामान कार्ड (क्लिक केल्यावर WeatherDetail पेज उघडेल) */}
+            <div 
+               onClick={() => navigate('/weather-detail', { state: { weather } })}
+               className="relative overflow-hidden rounded-3xl p-4.5 text-white shadow-xl border border-white/20 select-none min-h-[205px] flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all"
+            >
               
               {/* १. बॅकग्राउंड इमेज */}
               <img 
@@ -403,7 +405,7 @@ const Home = () => {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105"
               />
 
-              {/* २. गडद ग्रेडियंट ओव्हरले (मजकूर स्पष्ट दिसण्यासाठी) */}
+              {/* २. गडद ग्रेडियंट ओव्हरले */}
               <div className={`absolute inset-0 transition-colors duration-700 ${
                 isRaining 
                   ? 'bg-gradient-to-r from-slate-950/90 via-slate-900/75 to-blue-950/60' 
@@ -412,7 +414,7 @@ const Home = () => {
                     : 'bg-gradient-to-r from-[#0c542b]/95 via-[#0c542b]/75 to-transparent'
               }`}></div>
 
-              {/* ३. 🌧️ पाऊस सुरू असताना: कार्डवर थेट पडणारे पावसाचे थेंब */}
+              {/* ३. पाऊस असल्यास पडणारे पावसाचे थेंब */}
               {isRaining && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                   {[...Array(24)].map((_, i) => (
@@ -430,7 +432,7 @@ const Home = () => {
                 </div>
               )}
 
-              {/* ४. 💨 जोराचा वारा सुरू असताना: वाऱ्याच्या लाटांचा ॲनिमेशन इफेक्ट */}
+              {/* ४. वारा असल्यास वाऱ्याच्या लाटांचा ॲनिमेशन इफेक्ट */}
               {isWindy && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                   <div className="absolute top-1/4 -left-full w-full h-8 bg-gradient-to-r from-transparent via-white/25 to-transparent blur-sm animate-wind-gust"></div>
@@ -440,17 +442,22 @@ const Home = () => {
 
               {/* ५. मुख्य माहितीचा मजकूर */}
               <div className="relative z-10">
-                {/* वरचा हेडर बार */}
+                {/* टॉप हेडर बार */}
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center space-x-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/15">
                     <MapPin size={13} className="text-emerald-300 animate-bounce" />
                     <span className="text-[11px] font-bold tracking-wide">तुमचे शेत (Live हवामान)</span>
                   </div>
 
-                  <span className="text-[10px] px-2.5 py-1 rounded-full font-bold bg-black/40 backdrop-blur-md border border-white/15 flex items-center">
-                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isRaining ? 'bg-cyan-400 animate-ping' : isWindy ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-ping'}`}></span>
-                    {weatherTheme.statusBadge}
-                  </span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-black/40 backdrop-blur-md border border-white/15 flex items-center">
+                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isRaining ? 'bg-cyan-400 animate-ping' : isWindy ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-ping'}`}></span>
+                      {weatherTheme.statusBadge}
+                    </span>
+                    <span className="text-[9px] bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded-full font-bold backdrop-blur-md border border-white/20">
+                      तपशील →
+                    </span>
+                  </div>
                 </div>
 
                 {weatherLoading ? (
@@ -481,7 +488,7 @@ const Home = () => {
                         </div>
                       </div>
 
-                      {/* आर्द्रता व वारा तपशील */}
+                      {/* आर्द्रता व वारा */}
                       <div className="space-y-1.5 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/15 text-xs shadow-md">
                         <div className="flex items-center space-x-1.5 justify-end text-cyan-200">
                           <Droplets size={14} className="text-cyan-300" />
@@ -496,7 +503,7 @@ const Home = () => {
                       </div>
                     </div>
 
-                    {/* फवारणी सल्ला (Spray Advisory) */}
+                    {/* फवारणी सल्ला */}
                     <div className="mt-3.5 bg-black/40 border border-white/20 p-2.5 rounded-2xl backdrop-blur-md flex items-center space-x-2.5 shadow-md">
                       {weatherTheme.isGoodForSpray ? (
                         <CheckCircle2 size={20} className="text-emerald-300 flex-shrink-0" />
@@ -525,7 +532,7 @@ const Home = () => {
         </div>
       </IonContent>
 
-      {/* बॉटम नेव्हिगेशन बार */}
+      {/* ७. बॉटम नेव्हिगेशन बार */}
       <div 
         className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}

@@ -39,3 +39,80 @@
 .animate-wind-gust {
   animation: windBlowAnim 2.5s ease-in-out infinite;
 }
+
+/* ३. कॅरेक्टरचे हळुवार हालचाल ॲनिमेशन (Character Walking / Float Effect) */
+@keyframes characterFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.01);
+  }
+}
+
+.animate-character {
+  animation: characterFloat 3s ease-in-out infinite;
+}
+
+/* ४. वेदर डिटेल स्क्रीनवर पडणारा पाऊस (Full Screen Rain Drops) */
+@keyframes screenRainAnim {
+  0% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(380px);
+    opacity: 0;
+  }
+}
+
+.animate-screen-rain {
+  animation: screenRainAnim 0.7s linear infinite;
+}
+
+/* ५. हॉरिझॉन्टल स्क्रोलबार लपवण्यासाठी (No Scrollbar utility) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ६. 🔥 मुलगी उजवीकडून चालत येणे, मध्यभागी थांबणे आणि डावीकडे-उजवीकडे पाहणे (Live Walking & Looking Animation) */
+@keyframes girlWalkAndLook {
+  0% {
+    transform: translateX(110%) scaleX(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(50%) scaleX(1);
+  }
+  35% {
+    /* मध्यभागी येऊन थांबणे */
+    transform: translateX(0%) scaleX(1);
+  }
+  48% {
+    /* डावीकडे वळून पाहणे */
+    transform: translateX(0%) rotate(-3deg) scaleX(1);
+  }
+  65% {
+    /* उजवीकडे वळून पाहणे (Flip Face Look) */
+    transform: translateX(0%) rotate(2deg) scaleX(-1);
+  }
+  82% {
+    /* पुन्हा समोर पाहणे आणि हलके श्वास घेणे */
+    transform: translateX(0%) rotate(0deg) scaleX(1);
+  }
+  100% {
+    transform: translateX(0%) scaleX(1);
+  }
+}
+
+.animate-girl-walk {
+  animation: girlWalkAndLook 12s ease-in-out infinite;
+}
