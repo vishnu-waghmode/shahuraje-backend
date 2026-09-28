@@ -36,12 +36,12 @@ const Orders = () => {
     return new Date(dateString).toLocaleDateString('en-GB', options);
   };
 
-  // 👉 स्टेटस अपडेट करण्याचे फंक्शन
+  // 👉 स्टेटस अपडेट करण्याचे फंक्शन (POST मेथडसह अपडेट केले आहे)
   const handleStatusUpdate = async (orderId, newStatus) => {
     setIsUpdating(true);
     try {
       const response = await fetch(`https://shahuraje-backend.onrender.com/api/orders/${orderId}/status`, {
-        method: 'PUT',
+        method: 'POST', // 👉 404 एरर टाळण्यासाठी POST मेथड वापरली आहे
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
@@ -52,10 +52,12 @@ const Orders = () => {
         // पॉप-अप मधील डेटा अपडेट करणे
         setSelectedOrder(prev => ({ ...prev, status: newStatus }));
         alert("ऑर्डरचे स्टेटस यशस्वीरित्या अपडेट झाले!");
+      } else {
+        alert("स्टेटस अपडेट करताना सर्व्हरवर एरर आला.");
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("स्टेटस अपडेट करताना एरर आला.");
+      alert("सर्व्हरशी संपर्क होऊ शकला नाही.");
     } finally {
       setIsUpdating(false);
     }
@@ -156,7 +158,6 @@ const Orders = () => {
                       </span>
                     </td>
                     <td className="p-4 text-center">
-                      {/* 👉 इथे क्लिक केल्यावर पॉप-अप उघडेल */}
                       <button 
                         onClick={() => setSelectedOrder(order)}
                         className="text-gray-400 hover:text-[#154f30] transition-colors bg-gray-50 p-2 rounded-lg" 
