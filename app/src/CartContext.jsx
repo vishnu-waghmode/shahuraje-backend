@@ -7,7 +7,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   
   // तुझ्या Node.js API ची मुख्य लिंक (पोर्ट 5000 असेल तर)
-  const API_URL = 'https://shahuraje-backend.onrender.com/api/cart';
+  const API_URL = 'http://localhost:5000/api/cart';
 
   // लोकल स्टोरेजमधून सध्या लॉगिन असलेल्या युझरची माहिती मिळवणे
   const getUser = () => {
