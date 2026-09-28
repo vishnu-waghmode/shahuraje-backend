@@ -4,7 +4,6 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
 
-/* Ionic चे CSS */
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
 import '@ionic/react/css/structure.css';
@@ -30,24 +29,25 @@ import ForgotPassword from './pages/ForgotPassword';
 import MpinScreen from './pages/MpinScreen';
 import WeatherDetail from './pages/WeatherDetail';
 
-/* १. CartProvider इम्पोर्ट केला (तुमच्या CartContext.js फाईलचा पाथ तपासा) */
 import { CartProvider } from './CartContext';
+import { 
+  isAppLocked, 
+  checkHasMpin, 
+  recordBackgroundTime, 
+  clearBackgroundTime 
+} from './mpinStorage';
 
 setupIonicReact();
 
-/* १. टॉप प्रोग्रेस बार लोडर */
 const TopRouteLoader = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 250);
-
+    const timer = setTimeout(() => setLoading(false), 250);
     return () => clearTimeout(timer);
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   if (!loading) return null;
 
@@ -58,74 +58,47 @@ const TopRouteLoader = () => {
   );
 };
 
-/* २. नवीन अचूक बॅक बटण हँडलर (एक्झिट स्प्लॅश स्क्रीनसह) */
 const HardwareBackButtonHandler = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    const handleBackButton = (ev) => {
-      // प्रायोरिटी 100 देऊन ॲप डायरेक्ट क्लोज होण्यापासून थांबवणे
+    const handleBackButton = (ev: any) => {
+      if (!ev.detail?.register) return;
+
       ev.detail.register(100, () => {
         const currentPath = location.pathname;
 
-        // १. जर होम, लॉगिन किंवा स्प्लॅश पेजवर असेल
         if (currentPath === '/home' || currentPath === '/' || currentPath === '/login') {
           if (!isExiting) {
-            setIsExiting(true); // एक्झिट स्क्रीन चालू करणे
-            
-            // अडीच सेकंदांनी ॲप खऱ्या अर्थाने बंद करणे
+            setIsExiting(true);
             setTimeout(() => {
-              CapApp.exitApp();
+              try {
+                CapApp.exitApp();
+              } catch (e) {
+                // browser fallback
+              }
             }, 2000);
           }
-        } 
-        // २. इतर कोणत्याही पानावर असेल तर मागे जाणे
-        else {
+        } else {
           navigate(-1);
         }
       });
     };
 
-    document.addEventListener('ionBackButton', handleBackButton);
-
-    return () => {
-      document.removeEventListener('ionBackButton', handleBackButton);
-    };
+    document.addEventListener('ionBackButton', handleBackButton as any);
+    return () => document.removeEventListener('ionBackButton', handleBackButton as any);
   }, [location.pathname, navigate, isExiting]);
 
-  // जेव्हा युझर बाहेर पडत असेल तेव्हा ही स्क्रीन दिसेल
   if (isExiting) {
     return (
-      <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-gradient-to-b from-[#0c542b] to-[#052914] text-white transition-opacity duration-500">
-        
-        {/* पांढऱ्या गोलात तुमचा ब्रँड लोगो */}
-        <div className="bg-white p-2 rounded-full mb-6 shadow-[0_0_40px_rgba(34,197,94,0.3)] flex items-center justify-center w-24 h-24">
-          <img 
-            src="/shahuraje1.png" 
-            alt="लोगो" 
-            className="w-20 h-20 object-contain"
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.parentNode.innerHTML = '<span class="text-3xl font-black text-[#0c542b]">SR</span>';
-            }}
-          />
+      <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-gradient-to-b from-[#0c542b] to-[#052914] text-white">
+        <div className="bg-white p-2 rounded-full mb-6 shadow-2xl flex items-center justify-center w-24 h-24">
+          <img src="/shahuraje1.png" alt="logo" className="w-20 h-20 object-contain" />
         </div>
-        
-        {/* खास शेती विषयक संदेश */}
-        <h2 className="text-2xl font-black text-white flex items-center shadow-sm">
-          जय बळीराजा! <span className="ml-2 text-2xl">🌾</span>
-        </h2>
-        
-        <p className="text-sm font-medium text-green-200 mt-2 text-center px-8 leading-relaxed">
-          शेती आपली संस्कृती, <br/> शेतकरी आपला अभिमान!
-        </p>
-        
-        {/* तळाला बारीक लोडिंग टेक्स्ट */}
-        <p className="absolute bottom-10 text-[10px] font-bold text-green-400/60 tracking-[0.2em] uppercase animate-pulse">
-          सुरक्षितपणे बाहेर पडत आहे...
-        </p>
+        <h2 className="text-2xl font-black">Jai Baliraja! 🌾</h2>
+        <p className="text-sm font-medium text-green-200 mt-2">Sheti Aapli Sanskruti, Shetkari Aapla Abhiman!</p>
       </div>
     );
   }
@@ -133,13 +106,79 @@ const HardwareBackButtonHandler = () => {
   return null;
 };
 
+const AppLockWatcher = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const publicPaths = ['/login', '/register', '/mpin', '/setup-mpin', '/forgot-password', '/'];
+
+    const checkLockStatus = () => {
+      const user = localStorage.getItem('user');
+      if (user && checkHasMpin() && isAppLocked()) {
+        if (!publicPaths.includes(location.pathname)) {
+          navigate('/mpin', { replace: true });
+        }
+      } else {
+        clearBackgroundTime();
+      }
+    };
+
+    // Render cycle complete jhalyavar check hone saathi timeout
+    const timeoutId = setTimeout(checkLockStatus, 100);
+
+    let appListenerHandle: any = null;
+    try {
+      CapApp.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive) {
+          recordBackgroundTime();
+        } else {
+          const user = localStorage.getItem('user');
+          if (user && checkHasMpin() && isAppLocked()) {
+            navigate('/mpin', { replace: true });
+          } else {
+            clearBackgroundTime();
+          }
+        }
+      }).then((handle) => {
+        appListenerHandle = handle;
+      }).catch(() => {});
+    } catch (e) {}
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        recordBackgroundTime();
+      } else {
+        const user = localStorage.getItem('user');
+        if (user && checkHasMpin() && isAppLocked()) {
+          navigate('/mpin', { replace: true });
+        } else {
+          clearBackgroundTime();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (appListenerHandle?.remove) {
+        appListenerHandle.remove();
+      }
+    };
+  }, [location.pathname, navigate]);
+
+  return null;
+};
+
 const App = () => (
   <IonApp>
-    {/* २. संपूर्ण ॲपला CartProvider ने रॅप (Wrap) केले */}
     <CartProvider>
       <IonReactRouter>
         <TopRouteLoader />
         <HardwareBackButtonHandler />
+        <AppLockWatcher />
 
         <IonRouterOutlet>
           <Routes>
