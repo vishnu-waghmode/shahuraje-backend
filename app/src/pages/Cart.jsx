@@ -9,18 +9,71 @@ import { useCart } from '../CartContext';
 const Cart = () => {
   const navigate = useNavigate();
 
-  // २. Context मधून डायनॅमिक डेटा आणि फंक्शन्स घेतले
-  const { cartItems, increaseQty, decreaseQty, removeItem } = useCart();
+  // २. Context मधून डायनॅमिक डेटा आणि फंक्शन्स घेतले (clearCart पण घेतले आहे)
+  const { cartItems, increaseQty, decreaseQty, removeItem, clearCart } = useCart();
 
   const deliveryFee = 40;
-
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal > 0 ? subtotal + deliveryFee : 0;
+
+  // 👉 ३. नवीन ऑर्डर प्लेस करण्याचे फंक्शन
+  const handlePlaceOrder = async () => {
+    // युझरचा डेटा localStorage मधून घेणे
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    if (!user || (!user.id && !user._id)) {
+      alert("कृपया आधी लॉगिन करा!");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert("तुमची कार्ट रिकामी आहे!");
+      return;
+    }
+
+    // बॅकएंडला पाठवण्यासाठी डेटा तयार करणे
+    const orderData = {
+      userId: user.id || user._id, 
+      items: cartItems.map(item => ({
+        productId: item._id || item.id, 
+        quantity: item.quantity,
+        price: item.price
+      })),
+      totalAmount: total, // आपण वर कॅल्क्युलेट केलेली एकूण रक्कम
+      deliveryAddress: "शेतकऱ्याचा पत्ता / दुकानातून पिकअप" // सध्या डिफॉल्ट
+    };
+
+    try {
+      const response = await fetch('https://shahuraje-backend.onrender.com/api/orders/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("तुमची ऑर्डर यशस्वीरित्या नोंदवली गेली आहे!");
+        
+        // ऑर्डर झाल्यावर कार्ट रिकामी करा
+        clearCart(); 
+        
+        // युझरला 'माझी ऑर्डर्स' पेजवर पाठवा
+        navigate('/orders');
+      } else {
+        alert("ऑर्डर करताना एरर आला: " + (data.error || "Please check server"));
+      }
+    } catch (error) {
+      console.error("Order API Error:", error);
+      alert("सर्व्हरशी संपर्क होऊ शकला नाही!");
+    }
+  };
 
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
-        {/* pb-48 मुळे शेवटचे प्रॉडक्ट पेमेंट बटण आणि नेव्हिगेशन बारच्या मागे लपणार नाही */}
         <div className="w-full min-h-full flex flex-col pb-48">
           
           <div 
@@ -120,8 +173,9 @@ const Cart = () => {
           className="fixed left-0 right-0 bg-white border-t border-gray-100 p-3.5 px-6 z-40 rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)]"
           style={{ bottom: 'calc(env(safe-area-inset-bottom) + 90px)' }}
         >
+          {/* 👉 इथे onClick मध्ये handlePlaceOrder टाकले आहे */}
           <button 
-            onClick={() => alert('पेमेंट गेटवे सुरू होत आहे...')}
+            onClick={handlePlaceOrder}
             className="w-full bg-[#0c542b] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:bg-[#083a1d] active:scale-95 transition-all flex items-center justify-center"
           >
             पेमेंट करा (Checkout)

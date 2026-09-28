@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; 
@@ -9,8 +9,20 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false); // 👉 नवीन: Remember me state
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // 👉 नवीन: पेज उघडताच आधी सेव्ह केलेले credentials चेक करणे
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    const savedPassword = localStorage.getItem('remembered_password');
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,6 +42,15 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
+        // 👉 नवीन: युझरने 'Remember Me' चेक केले असेल तर डेटा सेव्ह करणे, नाहीतर डिलीट करणे
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email);
+          localStorage.setItem('remembered_password', password);
+        } else {
+          localStorage.removeItem('remembered_email');
+          localStorage.removeItem('remembered_password');
+        }
+
         unlockApp();
 
         if (!checkHasMpin()) {
@@ -117,10 +138,21 @@ const Login = () => {
                 </button>
               </div>
 
-              <div className="text-right">
+              {/* 👉 नवीन: Remember Me चेकबॉक्स आणि पासवर्ड विसरलात लिंक */}
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <label className="flex items-center space-x-2 cursor-pointer text-gray-600">
+                  <input 
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#0c542b] focus:ring-[#0c542b] border-gray-300 accent-[#0c542b]"
+                  />
+                  <span>लक्षात ठेवा (Remember Me)</span>
+                </label>
+
                 <span 
                   onClick={() => navigate('/forgot-password')}
-                  className="text-xs font-bold text-[#0c542b] cursor-pointer hover:underline"
+                  className="font-bold text-[#0c542b] cursor-pointer hover:underline"
                 >
                   पासवर्ड विसरलात ?
                 </span>

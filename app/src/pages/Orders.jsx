@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home as HomeIcon, Package, ShoppingCart, User, ChevronRight, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { ArrowLeft, Home as HomeIcon, Package, ShoppingCart, User, ChevronRight, CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -9,33 +9,39 @@ const Orders = () => {
   const [activeTab, setActiveTab] = useState('सर्व');
   const tabs = ['सर्व', 'प्रलंबित', 'पोहोचले', 'रद्द'];
 
-  const myOrders = [
-    {
-      id: '#ORD12546',
-      name: 'TATA रॅलिस झिंक 75% WP',
-      price: 450,
-      date: '12 Aug 2026, 10:30 AM',
-      status: 'Delivered',
-      image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=150'
-    },
-    {
-      id: '#ORD12501',
-      name: 'Indofil M-45 (फंगिसाइड)',
-      price: 380,
-      date: '10 Aug 2026, 04:15 PM',
-      status: 'Pending',
-      image: 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?w=150'
-    },
-    {
-      id: '#ORD12490',
-      name: 'Yara Urea',
-      price: 280,
-      date: '08 Aug 2026, 09:00 AM',
-      status: 'Delivered',
-      image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=150'
-    }
-  ];
+  // 👉 १. खरी ऑर्डर्स सेव्ह करण्यासाठी state
+  const [myOrders, setMyOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // 👉 २. बॅकएंडवरून ऑर्डर्स फेच करणे
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.id) {
+          console.error("User not logged in");
+          setLoading(false);
+          return;
+        }
+
+        // तुमच्या API ची लिंक (तुमच्या route नुसार)
+        const response = await fetch(`https://shahuraje-backend.onrender.com/api/orders/user/${user.id}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setMyOrders(data);
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  // 👉 ३. टॅबनुसार फिल्टर करणे
   const filteredOrders = myOrders.filter(order => {
     if (activeTab === 'सर्व') return true;
     if (activeTab === 'प्रलंबित' && order.status === 'Pending') return true;
@@ -43,6 +49,12 @@ const Orders = () => {
     if (activeTab === 'रद्द' && order.status === 'Cancelled') return true;
     return false;
   });
+
+  // तारीख फॉरमॅट करण्याचे फंक्शन
+  const formatDate = (dateString) => {
+    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return new Date(dateString).toLocaleDateString('en-GB', options);
+  };
 
   return (
     <IonPage>
@@ -82,15 +94,23 @@ const Orders = () => {
 
           <div className="px-4 pt-4 space-y-4">
             <div className="space-y-3">
-              {filteredOrders.length > 0 ? (
+              {loading ? (
+                // 👉 लोडिंग दाखवणे
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 size={30} className="animate-spin text-[#0c542b]" />
+                </div>
+              ) : filteredOrders.length > 0 ? (
+                // 👉 खऱ्या ऑर्डर्स लूप करणे
                 filteredOrders.map((order) => (
                   <div 
-                    key={order.id} 
-                    onClick={() => alert(`ऑर्डर ${order.id} चा तपशील लवकरच दिसेल!`)}
+                    key={order._id} 
+                    onClick={() => alert(`ऑर्डरची एकूण रक्कम: ₹${order.totalAmount}`)}
                     className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
                   >
                     <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
-                      <span className="text-xs font-bold text-gray-500">ऑर्डर {order.id}</span>
+                      <span className="text-xs font-bold text-gray-500">
+                        ऑर्डर #{order._id.substring(order._id.length - 6).toUpperCase()}
+                      </span>
                       
                       {order.status === 'Delivered' && (
                         <span className="flex items-center text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-md">
@@ -109,20 +129,32 @@ const Orders = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-3">
-                      <div className="w-16 h-16 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
-                        <img src={order.image} alt={order.name} className="w-full h-full object-cover" />
+                    {/* एका ऑर्डरमधील सर्व प्रॉडक्ट्स दाखवणे */}
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-3 mb-2 last:mb-0">
+                        <div className="w-16 h-16 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                          {/* प्रॉडक्टची इमेज (backend वरून येत असेल तर ती, नाहीतर डिफॉल्ट) */}
+                          <img 
+                            src={item.productId?.image || 'https://via.placeholder.com/150'} 
+                            alt={item.productId?.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className="font-bold text-xs text-gray-800 leading-snug line-clamp-1">
+                            {item.productId?.name || 'अज्ञात प्रॉडक्ट'}
+                          </h3>
+                          <div className="font-black text-[#0c542b] text-sm mt-0.5">
+                            ₹{item.price} <span className="text-[10px] text-gray-500">x {item.quantity}</span>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="flex-1">
-                        <h3 className="font-bold text-xs text-gray-800 leading-snug line-clamp-1">{order.name}</h3>
-                        <div className="font-black text-[#0c542b] text-sm mt-0.5">₹{order.price}</div>
-                        <p className="text-[10px] text-gray-400 font-medium mt-1">{order.date}</p>
-                      </div>
-
-                      <div className="text-gray-300">
-                        <ChevronRight size={20} />
-                      </div>
+                    ))}
+                    
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-50">
+                        <p className="text-[10px] text-gray-400 font-medium">{formatDate(order.createdAt)}</p>
+                        <div className="font-black text-gray-800 text-sm">एकूण: ₹{order.totalAmount}</div>
                     </div>
                   </div>
                 ))
@@ -138,51 +170,30 @@ const Orders = () => {
       </IonContent>
 
       {/* प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार (Orders Page) */}
-<div 
-  className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
-  style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
->
-  {/* होम बटण */}
-  <div 
-    onClick={() => navigate('/home')} 
-    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <HomeIcon size={22} className="stroke-[2]" />
-    <span className="text-[10px] font-semibold mt-0.5">होम</span>
-  </div>
+      <div 
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
+      >
+        <div onClick={() => navigate('/home')} className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
+          <HomeIcon size={22} className="stroke-[2]" />
+          <span className="text-[10px] font-semibold mt-0.5">होम</span>
+        </div>
 
-  {/* ऑर्डर्स बटण (सध्या ॲक्टिव्ह - हलक्या हिरव्या बॅकग्राउंडसह) */}
-  <div 
-    onClick={() => navigate('/orders')} 
-    className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
-  >
-    <Package size={22} className="stroke-[2.5]" />
-    <span className="text-[10px] font-black mt-0.5 tracking-wide">ऑर्डर्स</span>
-  </div>
+        <div onClick={() => navigate('/orders')} className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10">
+          <Package size={22} className="stroke-[2.5]" />
+          <span className="text-[10px] font-black mt-0.5 tracking-wide">ऑर्डर्स</span>
+        </div>
 
-  {/* कार्ट बटण (बॅजसह) */}
-  <div 
-    onClick={() => navigate('/cart')} 
-    className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <div className="relative">
-      <ShoppingCart size={22} className="stroke-[2]" />
-      <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
-        2
-      </span>
-    </div>
-    <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
-  </div>
+        <div onClick={() => navigate('/cart')} className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
+          <ShoppingCart size={22} className="stroke-[2]" />
+          <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
+        </div>
 
-  {/* प्रोफाईल बटण */}
-  <div 
-    onClick={() => navigate('/profile')} 
-    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <User size={22} className="stroke-[2]" />
-    <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
-  </div>
-</div>
+        <div onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
+          <User size={22} className="stroke-[2]" />
+          <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
+        </div>
+      </div>
     </IonPage>
   );
 };
