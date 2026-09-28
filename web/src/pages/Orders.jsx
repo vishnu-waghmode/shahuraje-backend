@@ -40,7 +40,7 @@ const Orders = () => {
   const handleStatusUpdate = async (orderId, newStatus) => {
     setIsUpdating(true);
     try {
-      const response = await fetch(`https://shahuraje-backend.onrender.com/api/orders/${orderId}/status`, {
+     const response = await fetch(`https://shahuraje-backend.onrender.com/api/orders/${orderId}/status`, {
         method: 'POST', // 👉 404 एरर टाळण्यासाठी POST मेथड वापरली आहे
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
