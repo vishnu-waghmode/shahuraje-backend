@@ -25,7 +25,7 @@ const Orders = () => {
         }
 
         // तुमच्या API ची लिंक (तुमच्या route नुसार)
-        const response = await fetch(`https://shahuraje-backend.onrender.com/api/orders/user/${user.id}`);
+        const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/orders/user/${user.id}`);
         const data = await response.json();
 
         if (response.ok) {

@@ -67,7 +67,7 @@ const Home = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
+        const response = await fetch('https://shahuraje-backend-1.onrender.com/api/products');
         const data = await response.json();
         setProducts(data);
         setLoading(false);

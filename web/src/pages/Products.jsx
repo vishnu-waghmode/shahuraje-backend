@@ -28,7 +28,7 @@ const Products = () => {
   // सर्व उत्पादने आणणे
   const fetchProducts = async () => {
     try {
-      const response = await fetch('https://shahuraje-backend.onrender.com/api/products');
+      const response = await fetch('https://shahuraje-backend-1.onrender.com/api/products');
       const data = await response.json();
       setProducts(data);
     } catch (error) {
@@ -64,8 +64,8 @@ const Products = () => {
     try {
       // इथे नवीन Render ची लिंक टाकली आहे 
       const url = editId 
-        ? `https://shahuraje-backend.onrender.com/api/products/${editId}` 
-        : 'https://shahuraje-backend.onrender.com/api/products/add';
+        ? `https://shahuraje-backend-1.onrender.com/api/products/${editId}` 
+        : 'https://shahuraje-backend-1.onrender.com/api/products/add';
       
       const method = editId ? 'PUT' : 'POST';
 
@@ -96,7 +96,7 @@ const Products = () => {
     if (!productToDelete) return;
     try {
       // इथेही नवीन Render ची लिंक टाकली आहे 
-      const response = await fetch(`https://shahuraje-backend.onrender.com/api/products/${productToDelete._id}`, {
+      const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/products/${productToDelete._id}`, {
         method: 'DELETE'
       });
 

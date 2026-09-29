@@ -24,7 +24,7 @@ const ForgotPassword = () => {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const res = await fetch('https://shahuraje-backend.onrender.com/api/users/send-otp', {
+      const res = await fetch('https://shahuraje-backend-1.onrender.com/api/users/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -58,7 +58,7 @@ const ForgotPassword = () => {
     setMsg({ type: '', text: '' });
 
     try {
-      const res = await fetch('https://shahuraje-backend.onrender.com/api/users/reset-password', {
+      const res = await fetch('https://shahuraje-backend-1.onrender.com/api/users/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword })

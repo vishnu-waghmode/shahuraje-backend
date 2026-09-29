@@ -44,7 +44,7 @@ const Cart = () => {
     };
 
     try {
-      const response = await fetch('https://shahuraje-backend.onrender.com/api/orders/add', {
+      const response = await fetch('https://shahuraje-backend-1.onrender.com/api/orders/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
