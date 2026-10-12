@@ -11,7 +11,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // पेज उघडताच सेव्ह केलेले credentials चेक करणे (Remember Me)
   useEffect(() => {
     const savedEmail = localStorage.getItem('remembered_email');
     const savedPassword = localStorage.getItem('remembered_password');
@@ -39,8 +38,9 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        // 30 min session sathi login timestamp save karne
+        localStorage.setItem('login_time', Date.now().toString());
         
-        // Remember me चेक केले असल्यास सेव्ह करणे
         if (rememberMe) {
           localStorage.setItem('remembered_email', email);
           localStorage.setItem('remembered_password', password);
@@ -49,7 +49,6 @@ const Login = () => {
           localStorage.removeItem('remembered_password');
         }
 
-        // डॅशबोर्ड किंवा होम पेजवर पाठवणे
         navigate('/dashboard', { replace: true });
       } else {
         setErrorMsg(data.error || 'ईमेल किंवा पासवर्ड चुकीचा आहे.');
@@ -63,22 +62,14 @@ const Login = () => {
   };
 
   return (
-    // p-0 आणि h-screen मुळे हे पूर्ण स्क्रीनवर दिसेल
     <div className="h-screen w-screen flex items-center justify-center bg-white p-0 m-0 overflow-hidden">
-      
-      {/* संपूर्ण स्क्रीन व्यापणारे मुख्य कार्ड */}
       <div className="w-full h-full flex flex-col md:flex-row">
-        
-        {/* डावीकडील भाग - बॅकग्राऊंड इमेज, हिरवा ओव्हरले आणि तुमचा लोगो */}
         <div 
           className="w-full md:w-1/2 h-2/5 md:h-full flex flex-col justify-center items-center text-white p-8 md:p-12 relative bg-cover bg-center"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1589923188900-85dae523342b?q=80&w=1000&auto=format&fit=crop')" }}
         >
-          {/* गडद हिरवा ओव्हरले */}
           <div className="absolute inset-0 bg-[#154f30]/85"></div>
-          
           <div className="relative z-10 flex flex-col items-center text-center">
-            {/* Shahuraje Logo */}
             <div className="bg-white/95 p-3 rounded-2xl mb-4 shadow-xl w-32 h-32 flex items-center justify-center">
               <img 
                 src="/shahuraje1.png" 
@@ -86,12 +77,7 @@ const Login = () => {
                 className="w-full h-full object-contain"
               />
             </div>
-
-            {/* <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-wide">शाहूराजे</h1>
-            <p className="text-lg md:text-xl text-green-200 mb-4 font-medium">कृषी केंद्र</p> */}
-            
             <div className="w-16 h-1 bg-green-400 rounded mb-4"></div>
-            
             <p className="text-xs md:text-sm font-medium text-green-50 leading-relaxed px-4 max-w-sm">
               शेतकऱ्यांचा विश्वास, आमची जबाबदारी.<br/> 
               आधुनिक तंत्रज्ञान आणि उत्कृष्ट खते आता तुमच्या बांधावर...
@@ -99,7 +85,6 @@ const Login = () => {
           </div>
         </div>
 
-        {/* उजवीकडील भाग - लॉगिन फॉर्म */}
         <div className="w-full md:w-1/2 h-3/5 md:h-full p-8 md:p-20 flex flex-col justify-center bg-white overflow-y-auto">
           <div className="max-w-md w-full mx-auto">
             <h2 className="text-3xl font-bold text-gray-800 mb-2">Admin Login</h2>
@@ -142,7 +127,7 @@ const Login = () => {
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -165,7 +150,7 @@ const Login = () => {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-[#154f30] text-white py-3.5 rounded-xl font-bold hover:bg-[#1b613c] transition-all shadow-md mt-2 text-base disabled:opacity-50"
+                className="w-full bg-[#154f30] text-white py-3.5 rounded-xl font-bold hover:bg-[#1b613c] transition-all shadow-md mt-2 text-base disabled:opacity-50 cursor-pointer"
               >
                 {loading ? 'Logging in...' : 'Login'}
               </button>
