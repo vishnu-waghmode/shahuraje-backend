@@ -101,6 +101,27 @@ const Checkout = () => {
         name: 'शाहूराजे कृषी केंद्र',
         description: 'शेती साहित्य खरेदी बिल',
         order_id: createData.orderId,
+        retry: {
+          enabled: false
+        },
+        config: {
+          display: {
+            blocks: {
+              banks: {
+                name: 'Pay using Netbanking',
+                instruments: [
+                  {
+                    method: 'netbanking'
+                  }
+                ]
+              }
+            },
+            sequence: ['block.banks'],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
         handler: async function (response) {
           // Step D: पेमेंट झाल्यानंतर बॅकएंडकडे व्हेरिफाय करणे
           try {
