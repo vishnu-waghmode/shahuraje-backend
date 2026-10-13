@@ -11,16 +11,18 @@ app.use(express.json());
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const paymentRoutes = require('./routes/paymentRoutes'); // <-- पेमेंट राऊट इम्पोर्ट केला
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB शी यशस्वीरित्या कनेक्ट झाले!'))
     .catch((err) => console.log('MongoDB कनेक्शन एरर:', err));
-    
 
-    // API Routes वापरणे (येथे आपण route ऍक्टिव्हेट केले आहे)
+// API Routes वापरणे
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payment', paymentRoutes); // <-- पेमेंट राऊट ऍक्टिव्हेट केला
 
 app.get('/', (req, res) => {
     res.send('शाहूराजे कृषी केंद्र - Backend API चालू आहे...');
