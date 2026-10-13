@@ -11,16 +11,13 @@ const AdminProfileMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // LocalStorage मधून डेटा तपासणे
   const savedUser = JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('user') || '{}');
   
-  // दुकानासाठी योग्य नाव आणि रोल सेट करणे
-  // जर रोल 'admin' असेल किंवा नाव 'Admin' असेल तर तेच घ्या, अन्यथा 'शाहूराजे ॲडमिन' दाखवा
   const isAdminRole = savedUser.role === 'admin' || savedUser.isAdmin === true;
   const adminName = isAdminRole && savedUser.name ? savedUser.name : 'शाहूराजे ॲडमिन';
   const adminEmail = savedUser.email || 'admin@shahuraje.com';
   const adminRole = 'दुकान व्यवस्थापक (Store Admin)';
-  const avatarLetter = 'A'; // दुकानासाठी नेहमी दिमाखात 'A' (Admin) च दिसेल
+  const avatarLetter = 'A';
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -133,7 +130,7 @@ const Dashboard = () => {
       setRawOrders(ordersList);
       setProductsCount(productsList.length);
 
-      // Latest 4 orders
+      // सर्वात ताज्या ४ ऑर्डर्स
       const sortedOrders = [...ordersList].reverse().slice(0, 4);
       setRecentOrders(sortedOrders);
 
@@ -212,16 +209,19 @@ const Dashboard = () => {
     setSalesGraphData(graphPoints);
   };
 
+  // ग्राहकाचे खरे नाव मिळवण्याचे अपडेटेड लॉजिक (Highest Priority to App Checkout Data)
   const getCustomerName = (order) => {
+    const u = order.userId || order.user || {};
     return (
       order.customerName ||
-      order.customer?.name ||
-      order.user?.name ||
-      order.userName ||
       order.shippingAddress?.fullName ||
       order.shippingAddress?.name ||
+      (typeof u === 'object' && (u.name || u.fullName || u.userName)) ||
+      order.customer?.name ||
+      order.userName ||
+      order.billingAddress?.name ||
       order.name ||
-      'ग्राहक'
+      (typeof u === 'string' && u.length > 0 ? `शेतकरी (#${u.slice(-4)})` : 'ग्राहक')
     );
   };
 

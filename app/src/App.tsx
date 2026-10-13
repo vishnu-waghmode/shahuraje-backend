@@ -23,6 +23,7 @@ import Home from './pages/Home';
 import ProductListing from './pages/ProductListing';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout'; // <-- हे नवीन जोडले
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
@@ -124,7 +125,6 @@ const AppLockWatcher = () => {
       }
     };
 
-    // Render cycle complete jhalyavar check hone saathi timeout
     const timeoutId = setTimeout(checkLockStatus, 100);
 
     let appListenerHandle: any = null;
@@ -191,6 +191,7 @@ const App = () => (
             <Route path="/productlisting" element={<ProductListing />} />
             <Route path="/product-detail" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} /> {/* <-- हे नवीन जोडले */}
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

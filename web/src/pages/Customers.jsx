@@ -19,40 +19,72 @@ const Customers = () => {
       const data = await res.json();
       const orders = Array.isArray(data) ? data : data.orders || [];
 
-      // Orders madhun unique customers tayar karne
       const customerMap = {};
 
       orders.forEach((order) => {
+        const u = order.userId || order.user || {};
+
+        // 👉 नवीन ॲप चेकआउटमधील 'deliveryAddress' मधून डेटा काढणे
+        let parsedName = '';
+        let parsedPhone = '';
+        let parsedVillage = '';
+
+        if (order.deliveryAddress && typeof order.deliveryAddress === 'string') {
+          const parts = order.deliveryAddress.split(',');
+          // जर पत्ता "नाव, फोन, पत्ता, गाव - पिनकोड" या फॉरमॅटमध्ये असेल
+          if (parts.length >= 3) {
+            parsedName = parts[0].trim(); // पहिले नाव
+            parsedPhone = parts[1].trim(); // दुसरा फोन नंबर
+            parsedVillage = parts[parts.length - 1].trim(); // शेवटचे गाव आणि पिनकोड
+          } else {
+            parsedVillage = order.deliveryAddress; // फॉरमॅट वेगळा असल्यास पूर्ण पत्ता दाखवा
+          }
+        }
+
+        // 1. शेतकऱ्याचे / ग्राहकाचे नाव
         const name =
+          parsedName ||
+          (typeof u === 'object' && (u.name || u.fullName || u.userName)) ||
           order.customerName ||
-          order.customer?.name ||
-          order.user?.name ||
           order.shippingAddress?.fullName ||
           order.shippingAddress?.name ||
           order.name ||
-          'ग्राहक';
+          (typeof u === 'string' && u.length > 0 ? `शेतकरी (#${u.slice(-4)})` : 'शेतकरी');
 
+        // 2. मोबाईल नंबर
         const phone =
+          parsedPhone ||
+          (typeof u === 'object' && (u.phone || u.phoneNumber || u.mobile)) ||
           order.phone ||
           order.phoneNumber ||
           order.shippingAddress?.phone ||
-          order.user?.phone ||
+          order.shippingAddress?.phoneNumber ||
+          order.shippingAddress?.mobile ||
           'उपलब्ध नाही';
 
+        // 3. गाव / पत्ता
         const location =
-          order.shippingAddress?.city ||
+          parsedVillage ||
+          (typeof u === 'object' && (u.village || u.city || u.address)) ||
           order.shippingAddress?.village ||
+          order.shippingAddress?.city ||
+          order.shippingAddress?.district ||
           order.shippingAddress?.address ||
           order.city ||
+          order.village ||
           'महाराष्ट्र';
 
-        // Unique key manun phone number kiva name vapra
-        const key = phone !== 'उपलब्ध नाही' ? phone : name;
+        // Unique identifier: phone -> userId ID -> name
+        const uniqueKey =
+          phone !== 'उपलब्ध नाही'
+            ? phone
+            : (u._id || (typeof u === 'string' ? u : name));
+
         const orderAmount = Number(order.totalAmount || order.total || order.amount || 0);
         const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
 
-        if (!customerMap[key]) {
-          customerMap[key] = {
+        if (!customerMap[uniqueKey]) {
+          customerMap[uniqueKey] = {
             id: order._id,
             name: name,
             phone: phone,
@@ -62,10 +94,10 @@ const Customers = () => {
             lastOrderDate: orderDate,
           };
         } else {
-          customerMap[key].totalOrders += 1;
-          customerMap[key].totalSpent += orderAmount;
-          if (orderDate > customerMap[key].lastOrderDate) {
-            customerMap[key].lastOrderDate = orderDate;
+          customerMap[uniqueKey].totalOrders += 1;
+          customerMap[uniqueKey].totalSpent += orderAmount;
+          if (orderDate > customerMap[uniqueKey].lastOrderDate) {
+            customerMap[uniqueKey].lastOrderDate = orderDate;
           }
         }
       });
