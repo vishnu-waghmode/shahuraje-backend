@@ -31,6 +31,7 @@ import MpinScreen from './pages/MpinScreen';
 import WeatherDetail from './pages/WeatherDetail';
 import DeliveryDashboard from './pages/DeliveryDashboard';
 import TrackDelivery from './pages/TrackDelivery';
+import Notifications from './pages/Notifications';
 
 import { CartProvider } from './CartContext';
 import { 
@@ -212,6 +213,7 @@ const App = () => (
             <Route path="/weather-detail" element={<WeatherDetail />} />
             <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
             <Route path="/track-order/:orderId" element={<TrackDelivery />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Routes>
         </IonRouterOutlet>
       </IonReactRouter>

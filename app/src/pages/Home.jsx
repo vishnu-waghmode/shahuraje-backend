@@ -3,7 +3,7 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, ShoppingCart, Home as HomeIcon, User, Package, Plus, 
-  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain
+  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain, Bell // 👈 Bell आयात केला आहे
 } from 'lucide-react';
 import { useCart } from '../CartContext';
 
@@ -11,8 +11,10 @@ const Home = () => {
   const navigate = useNavigate();
   const { cartItems, addToCart } = useCart();
 
+  // युझरची माहिती आणि ID
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const userName = savedUser?.name || 'शेतकरी मित्र';
+  const userId = savedUser?._id; // 👈 युझरचा आयडी घेतला
   
   const userInitials = userName
     .split(' ')
@@ -24,6 +26,9 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // 🔴 नोटिफिकेशन्सचा लाईव्ह आकडा दाखवण्यासाठी नवीन State
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // लाईव्ह हवामानासाठी स्टेट्स
   const [weather, setWeather] = useState(null);
@@ -79,6 +84,26 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  // 🔴 न वाचलेले नोटिफिकेशन्स आणणे (दर २० सेकंदांनी)
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        if (!userId) return;
+        const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/notifications/${userId}`);
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching notification count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 20000); 
+    return () => clearInterval(interval);
+  }, [userId]);
+
   // थेट GPS लोकेशनवरून लाईव्ह हवामान
   useEffect(() => {
     const fetchLiveWeather = async (lat, lon) => {
@@ -121,8 +146,6 @@ const Home = () => {
       (weather.weather_code >= 80 && weather.weather_code <= 82)
     )
   );
-
-  // const isRaining = true;
 
   const isWindy = !isRaining && Boolean(weather && weather.wind_speed_10m >= 26);
 
@@ -186,6 +209,21 @@ const Home = () => {
             </div>
 
             <div className="flex items-center space-x-3">
+              
+              {/* 🔴 Bell Icon */}
+              <div 
+                onClick={() => navigate('/notifications')} 
+                className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
+              >
+                <Bell size={20} className="text-[#0c542b]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+
+              {/* Cart Icon */}
               <div 
                 onClick={() => navigate('/cart')} 
                 className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
@@ -197,6 +235,8 @@ const Home = () => {
                   </span>
                 )}
               </div>
+              
+              {/* Profile Icon */}
               <div 
                 onClick={() => navigate('/profile')} 
                 className="w-9 h-9 bg-[#0c542b] text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md cursor-pointer"
@@ -312,7 +352,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* ५. लोकप्रिय उत्पादने (फक्त ४ उत्पादने) */}
+            {/* ५. लोकप्रिय उत्पादने */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-bold text-gray-800 text-base">
@@ -392,20 +432,16 @@ const Home = () => {
               )}
             </div>
 
-            {/* ६. 🔥 लाईव्ह हवामान कार्ड (क्लिक केल्यावर WeatherDetail पेज उघडेल) */}
+            {/* ६. 🔥 लाईव्ह हवामान कार्ड */}
             <div 
                onClick={() => navigate('/weather-detail', { state: { weather } })}
                className="relative overflow-hidden rounded-3xl p-4.5 text-white shadow-xl border border-white/20 select-none min-h-[205px] flex flex-col justify-between cursor-pointer active:scale-[0.98] transition-all"
             >
-              
-              {/* १. बॅकग्राउंड इमेज */}
               <img 
                 src={weatherTheme.bgImage} 
                 alt="हवामान दृश्य" 
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 scale-105"
               />
-
-              {/* २. गडद ग्रेडियंट ओव्हरले */}
               <div className={`absolute inset-0 transition-colors duration-700 ${
                 isRaining 
                   ? 'bg-gradient-to-r from-slate-950/90 via-slate-900/75 to-blue-950/60' 
@@ -414,7 +450,6 @@ const Home = () => {
                     : 'bg-gradient-to-r from-[#0c542b]/95 via-[#0c542b]/75 to-transparent'
               }`}></div>
 
-              {/* ३. पाऊस असल्यास पडणारे पावसाचे थेंब */}
               {isRaining && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                   {[...Array(24)].map((_, i) => (
@@ -432,7 +467,6 @@ const Home = () => {
                 </div>
               )}
 
-              {/* ४. वारा असल्यास वाऱ्याच्या लाटांचा ॲनिमेशन इफेक्ट */}
               {isWindy && (
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
                   <div className="absolute top-1/4 -left-full w-full h-8 bg-gradient-to-r from-transparent via-white/25 to-transparent blur-sm animate-wind-gust"></div>
@@ -440,9 +474,7 @@ const Home = () => {
                 </div>
               )}
 
-              {/* ५. मुख्य माहितीचा मजकूर */}
               <div className="relative z-10">
-                {/* टॉप हेडर बार */}
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center space-x-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/15">
                     <MapPin size={13} className="text-emerald-300 animate-bounce" />
@@ -488,7 +520,6 @@ const Home = () => {
                         </div>
                       </div>
 
-                      {/* आर्द्रता व वारा */}
                       <div className="space-y-1.5 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/15 text-xs shadow-md">
                         <div className="flex items-center space-x-1.5 justify-end text-cyan-200">
                           <Droplets size={14} className="text-cyan-300" />
@@ -503,7 +534,6 @@ const Home = () => {
                       </div>
                     </div>
 
-                    {/* फवारणी सल्ला */}
                     <div className="mt-3.5 bg-black/40 border border-white/20 p-2.5 rounded-2xl backdrop-blur-md flex items-center space-x-2.5 shadow-md">
                       {weatherTheme.isGoodForSpray ? (
                         <CheckCircle2 size={20} className="text-emerald-300 flex-shrink-0" />

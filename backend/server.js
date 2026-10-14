@@ -13,6 +13,7 @@ const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes'); // <-- पेमेंट राऊट इम्पोर्ट केला
 const deliveryRoutes = require('./routes/deliveryRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -25,6 +26,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes); // <-- पेमेंट राऊट ऍक्टिव्हेट केला
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
     res.send('शाहूराजे कृषी केंद्र - Backend API चालू आहे...');
