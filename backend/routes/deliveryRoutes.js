@@ -21,36 +21,37 @@ router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
 });
 
 // २. डिलिव्हरी बॉयने स्टेटस अपडेट करणे (उदा. Picked_Up किंवा Delivered - Mobile App साठी)
-router.put('/update-status/:orderId', async (req, res) => {
+router.put('/assign-order', async (req, res) => {
   try {
-    const { deliveryStatus, lat, lng } = req.body;
-    
-    const updateData = {};
-    if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
+    const { orderId, deliveryBoyId } = req.body;
 
-    // जेव्हा तो पिकअप करेल तेव्हा मुख्य ऑर्डर स्टेटस Processing होईल
-    if (deliveryStatus === 'Picked_Up') {
-      updateData.status = 'Processing';
-    } 
-    // जेव्हा तो डिलिव्हर करेल
-    else if (deliveryStatus === 'Delivered') {
-      updateData.status = 'Delivered';
-      updateData.paymentStatus = 'Paid'; // COD चे पैसे डिलिव्हरी बॉयने गोळा केल्यावर Paid होईल
+    if (!orderId) {
+      return res.status(400).json({ success: false, error: 'Order ID आवश्यक आहे' });
     }
 
-    // मोबाईलचे जीपीएस लोकेशन आल्यास सेव्ह करणे
-    if (lat && lng) {
-      updateData.deliveryBoyLocation = { lat, lng };
+    const updateFields = {
+      deliveryBoyId: deliveryBoyId ? deliveryBoyId : null,
+      deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
+    };
+
+    // ऑर्डर स्टेटस Processing करणे (जर ती Delivered नसेल तर)
+    if (deliveryBoyId) {
+      updateFields.status = 'Processing';
     }
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.orderId,
-      updateData,
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      updateFields,
       { new: true }
     );
 
-    res.status(200).json({ success: true, order });
+    res.status(200).json({ 
+      success: true, 
+      message: 'डिलिव्हरी बॉय यशस्वीरीत्या नेमला गेला!', 
+      order: updatedOrder 
+    });
   } catch (err) {
+    console.error("Assign Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
