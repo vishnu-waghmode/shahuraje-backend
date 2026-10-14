@@ -1,14 +1,27 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
-const User = require('../models/User'); // युझर मॉडेल आवश्यक आहे
+const User = require('../models/User');
 
-// १. डिलिव्हरी बॉयला नेमून दिलेल्या सर्व ऑर्डर्स मिळवणे (Mobile App साठी)
+// 1. Delivery boy la assign jhalelya orders milvane (Mobile App sathi)
 router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
   try {
+    const { deliveryBoyId } = req.params;
+
+    if (!deliveryBoyId || deliveryBoyId === 'undefined') {
+      return res.status(400).json({ success: false, error: 'Invalid deliveryBoyId' });
+    }
+
+    // String la Mongoose ObjectId madhye convert karne
+    let queryBoyId = deliveryBoyId;
+    if (mongoose.Types.ObjectId.isValid(deliveryBoyId)) {
+      queryBoyId = new mongoose.Types.ObjectId(deliveryBoyId);
+    }
+
     const orders = await Order.find({ 
-      deliveryBoyId: req.params.deliveryBoyId,
-      status: { $ne: 'Delivered' } // ज्या ऑर्डर्स पूर्ण झाल्या नाहीत त्या दाखवा
+      deliveryBoyId: { $in: [deliveryBoyId, queryBoyId] },
+      status: { $ne: 'Delivered' }
     })
     .populate('userId', 'name phone')
     .populate('items.productId', 'name price image')
@@ -16,68 +29,72 @@ router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
 
     res.status(200).json({ success: true, orders });
   } catch (err) {
+    console.error("Fetch assigned orders error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// २. डिलिव्हरी बॉयने स्टेटस अपडेट करणे (उदा. Picked_Up किंवा Delivered - Mobile App साठी)
-router.put('/assign-order', async (req, res) => {
+// 2. Delivery boy ne status update karne (Pick Up kiva Delivered - Mobile App sathi)
+router.put('/update-status/:orderId', async (req, res) => {
   try {
-    const { orderId, deliveryBoyId } = req.body;
+    const { deliveryStatus, lat, lng } = req.body;
+    
+    const updateData = {};
+    if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
 
-    if (!orderId) {
-      return res.status(400).json({ success: false, error: 'Order ID आवश्यक आहे' });
+    if (deliveryStatus === 'Picked_Up') {
+      updateData.status = 'Processing';
+    } else if (deliveryStatus === 'Delivered') {
+      updateData.status = 'Delivered';
+      updateData.paymentStatus = 'Paid';
     }
 
-    const updateFields = {
-      deliveryBoyId: deliveryBoyId ? deliveryBoyId : null,
-      deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
-    };
-
-    // ऑर्डर स्टेटस Processing करणे (जर ती Delivered नसेल तर)
-    if (deliveryBoyId) {
-      updateFields.status = 'Processing';
+    if (lat && lng) {
+      updateData.deliveryBoyLocation = { lat, lng };
     }
 
-    const updatedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      updateFields,
+    const order = await Order.findByIdAndUpdate(
+      req.params.orderId,
+      updateData,
       { new: true }
     );
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'डिलिव्हरी बॉय यशस्वीरीत्या नेमला गेला!', 
-      order: updatedOrder 
-    });
+    res.status(200).json({ success: true, order });
   } catch (err) {
-    console.error("Assign Error:", err);
+    console.error("Update status error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ३. सर्व रजिस्टर असलेल्या डिलिव्हरी बॉईजची यादी मिळवणे (Admin Web Dropdown साठी)
+// 3. Sarv delivery boys chi list milvane (Admin Web Dropdown sathi)
 router.get('/delivery-boys', async (req, res) => {
   try {
     const deliveryBoys = await User.find({ role: 'delivery_boy' }).select('name phone _id');
     res.status(200).json({ success: true, deliveryBoys });
   } catch (err) {
+    console.error("Fetch delivery boys error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ४. ॲडमिनने ऑर्डर डिलिव्हरी बॉयला सोपवणे (Assign Order - Admin Web साठी)
+// 4. Admin ne order delivery boy la assign karne (Admin Web sathi)
 router.put('/assign-order', async (req, res) => {
   try {
     const { orderId, deliveryBoyId } = req.body;
 
+    if (!orderId) {
+      return res.status(400).json({ success: false, error: 'Order ID required ahe' });
+    }
+
+    const updateFields = {
+      deliveryBoyId: deliveryBoyId ? deliveryBoyId : null,
+      deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
+      status: deliveryBoyId ? 'Processing' : 'Pending'
+    };
+
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
-      {
-        deliveryBoyId: deliveryBoyId || null,
-        deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
-        status: deliveryBoyId ? 'Processing' : 'Pending'
-      },
+      updateFields,
       { new: true }
     )
     .populate('userId', 'name phone')
@@ -85,10 +102,11 @@ router.put('/assign-order', async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      message: 'डिलिव्हरी बॉय यशस्वीरीत्या निवडला!', 
+      message: 'Delivery boy assign jhala!', 
       order: updatedOrder 
     });
   } catch (err) {
+    console.error("Assign error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
