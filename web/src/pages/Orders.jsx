@@ -61,7 +61,7 @@ const Orders = () => {
       });
 
       if (response.ok) {
-        setOrders(orders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+        setOrders(orders.map(o => (o._id === orderId || o.id === orderId) ? { ...o, status: newStatus } : o));
         setSelectedOrder(prev => (prev ? { ...prev, status: newStatus } : null));
         alert("ऑर्डरचे स्टेटस यशस्वीरित्या अपडेट झाले!");
       } else {
@@ -75,27 +75,37 @@ const Orders = () => {
     }
   };
 
-  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy)
-  const handleAssignDeliveryBoy = async (orderId, deliveryBoyId) => {
-    setAssigningId(orderId);
+  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy) - Order ID सुरक्षितपणे मिळवणे
+  const handleAssignDeliveryBoy = async (order, deliveryBoyId) => {
+    const targetOrderId = order?._id || order?.id;
+
+    if (!targetOrderId) {
+      alert("ऑर्डर आयडी सापडला नाही!");
+      return;
+    }
+
+    setAssigningId(targetOrderId);
     try {
       const response = await fetch(`${API_BASE_URL}/api/delivery/assign-order`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, deliveryBoyId })
+        body: JSON.stringify({ 
+          orderId: targetOrderId.toString(), 
+          deliveryBoyId: deliveryBoyId ? deliveryBoyId.toString() : null 
+        })
       });
 
       const data = await response.json();
       if (response.ok && data.success) {
         // ऑर्डर्स टेबल लगेच अपडेट करणे
-        setOrders(orders.map(o => o._id === orderId ? { 
+        setOrders(orders.map(o => (o._id === targetOrderId || o.id === targetOrderId) ? { 
           ...o, 
           deliveryBoyId: deliveryBoyId,
           deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
           status: deliveryBoyId ? 'Processing' : o.status
         } : o));
 
-        if (selectedOrder && selectedOrder._id === orderId) {
+        if (selectedOrder && (selectedOrder._id === targetOrderId || selectedOrder.id === targetOrderId)) {
           setSelectedOrder(prev => ({
             ...prev,
             deliveryBoyId: deliveryBoyId,
@@ -120,7 +130,7 @@ const Orders = () => {
     if (activeTab !== 'All Orders' && order.status !== activeTab) return false;
     const searchLower = searchTerm.toLowerCase();
     const customerName = order.userId?.name?.toLowerCase() || '';
-    const orderId = order._id?.toLowerCase() || '';
+    const orderId = (order._id || order.id || '').toLowerCase();
     return customerName.includes(searchLower) || orderId.includes(searchLower);
   });
 
@@ -187,59 +197,65 @@ const Orders = () => {
                   </td>
                 </tr>
               ) : filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
-                  <tr key={order._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="p-4 font-medium text-gray-800">
-                      #{order._id.substring(order._id.length - 6).toUpperCase()}
-                    </td>
-                    <td className="p-4 text-gray-600 font-medium">
-                      {order.userId?.name || 'अज्ञात'}
-                    </td>
-                    <td className="p-4 text-gray-500">
-                      {formatDate(order.createdAt)}
-                    </td>
-                    <td className="p-4 font-bold text-[#154f30]">
-                      ₹ {order.totalAmount}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
-                        order.status === 'Processing' ? 'bg-blue-100 text-blue-700' : 
-                        order.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
-                        'bg-orange-100 text-orange-700'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    
-                    {/* 👉 नवीन: डिलिव्हरी बॉय असाइनमेंट ड्रॉपडाऊन */}
-                    <td className="p-4">
-                      <select
-                        value={order.deliveryBoyId?._id || order.deliveryBoyId || ''}
-                        onChange={(e) => handleAssignDeliveryBoy(order._id, e.target.value)}
-                        disabled={assigningId === order._id || order.status === 'Delivered' || order.status === 'Cancelled'}
-                        className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#154f30] bg-white cursor-pointer disabled:opacity-50"
-                      >
-                        <option value="">-- निवडा --</option>
-                        {deliveryBoys.map((boy) => (
-                          <option key={boy._id} value={boy._id}>
-                            {boy.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                filteredOrders.map((order) => {
+                  const currentOrderId = order._id || order.id || '';
+                  return (
+                    <tr key={currentOrderId} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4 font-medium text-gray-800">
+                        #{currentOrderId ? currentOrderId.substring(currentOrderId.length - 6).toUpperCase() : 'N/A'}
+                      </td>
+                      <td className="p-4 text-gray-600 font-medium">
+                        {order.userId?.name || 'अज्ञात'}
+                      </td>
+                      <td className="p-4 text-gray-500">
+                        {formatDate(order.createdAt)}
+                      </td>
+                      <td className="p-4 font-bold text-[#154f30]">
+                        ₹ {order.totalAmount}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
+                          order.status === 'Processing' ? 'bg-blue-100 text-blue-700' : 
+                          order.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
+                          'bg-orange-100 text-orange-700'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      
+                      {/* डिलिव्हरी बॉय ड्रॉपडाऊन */}
+                      <td className="p-4">
+                        <select
+                          value={order.deliveryBoyId?._id || order.deliveryBoyId || ''}
+                          onChange={(e) => handleAssignDeliveryBoy(order, e.target.value)}
+                          disabled={assigningId === currentOrderId || order.status === 'Delivered' || order.status === 'Cancelled'}
+                          className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#154f30] bg-white cursor-pointer disabled:opacity-50"
+                        >
+                          <option value="">-- निवडा --</option>
+                          {deliveryBoys.map((boy) => {
+                            const boyId = boy._id || boy.id;
+                            return (
+                              <option key={boyId} value={boyId}>
+                                {boy.name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </td>
 
-                    <td className="p-4 text-center">
-                      <button 
-                        onClick={() => setSelectedOrder(order)}
-                        className="text-gray-400 hover:text-[#154f30] transition-colors bg-gray-50 p-2 rounded-lg" 
-                        title="View Order"
-                      >
-                        <Eye size={18} className="mx-auto" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      <td className="p-4 text-center">
+                        <button 
+                          onClick={() => setSelectedOrder(order)}
+                          className="text-gray-400 hover:text-[#154f30] transition-colors bg-gray-50 p-2 rounded-lg" 
+                          title="View Order"
+                        >
+                          <Eye size={18} className="mx-auto" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="7" className="p-10 text-center text-gray-500">
@@ -261,7 +277,7 @@ const Orders = () => {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  ऑर्डर #{selectedOrder._id.substring(selectedOrder._id.length - 6).toUpperCase()}
+                  ऑर्डर #{(selectedOrder._id || selectedOrder.id || '').substring((selectedOrder._id || selectedOrder.id || '').length - 6).toUpperCase()}
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">{formatDate(selectedOrder.createdAt)}</p>
               </div>
@@ -292,7 +308,7 @@ const Orders = () => {
               {/* Order Items */}
               <h3 className="font-bold text-gray-800 mb-3 border-b pb-2">ऑर्डरमधील उत्पादने</h3>
               <div className="space-y-3 mb-6">
-                {selectedOrder.items.map((item, index) => (
+                {(selectedOrder.items || []).map((item, index) => (
                   <div key={index} className="flex justify-between items-center bg-white border border-gray-100 p-3 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
@@ -335,7 +351,7 @@ const Orders = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <select 
                   value={selectedOrder.status}
-                  onChange={(e) => handleStatusUpdate(selectedOrder._id, e.target.value)}
+                  onChange={(e) => handleStatusUpdate(selectedOrder._id || selectedOrder.id, e.target.value)}
                   disabled={isUpdating}
                   className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:border-[#154f30] bg-white cursor-pointer disabled:opacity-50"
                 >
