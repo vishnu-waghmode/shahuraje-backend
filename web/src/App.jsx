@@ -58,7 +58,9 @@ function App() {
         <Route path="/inventory" element={<ProtectedRoute><AdminLayout><Products /></AdminLayout></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><AdminLayout><Reports /></AdminLayout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AdminLayout><Settings /></AdminLayout></ProtectedRoute>} />
-        <Route path="/delivery-boys" element={<DeliveryBoys />} />
+        
+        {/* 👉 DeliveryBoys route la AdminLayout aani ProtectedRoute madhye wrap kele aahe */}
+        <Route path="/delivery-boys" element={<ProtectedRoute><AdminLayout><DeliveryBoys /></AdminLayout></ProtectedRoute>} />
       </Routes>
     </Router>
   );
