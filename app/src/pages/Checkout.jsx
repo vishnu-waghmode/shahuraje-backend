@@ -97,29 +97,24 @@ const Checkout = () => {
       const options = {
         key: createData.keyId,
         amount: createData.amount,
-        currency: createData.currency,
+        currency: 'INR',
         name: 'शाहूराजे कृषी केंद्र',
         description: 'शेती साहित्य खरेदी बिल',
         order_id: createData.orderId,
         retry: {
           enabled: false
         },
-        config: {
-          display: {
-            blocks: {
-              banks: {
-                name: 'Pay using Netbanking',
-                instruments: [
-                  {
-                    method: 'netbanking'
-                  }
-                ]
-              }
-            },
-            sequence: ['block.banks'],
-            preferences: {
-              show_default_blocks: true
-            }
+        prefill: {
+          name: address.fullName || 'Customer',
+          contact: address.phone || '8767834236',
+          email: 'vishnuwaghmode43@gmail.com'
+        },
+        theme: {
+          color: '#0c542b'
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
           }
         },
         handler: async function (response) {
@@ -153,18 +148,6 @@ const Checkout = () => {
             console.error("Verification error:", err);
             alert("पेमेंट व्हेरिफाय करताना सर्व्हरशी संपर्क तुटला!");
           } finally {
-            setLoading(false);
-          }
-        },
-        prefill: {
-          name: address.fullName,
-          contact: address.phone
-        },
-        theme: {
-          color: '#0c542b'
-        },
-        modal: {
-          ondismiss: function () {
             setLoading(false);
           }
         }
