@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf, Truck } from 'lucide-react'; // 👉 Truck आयकॉन जोडले
+import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf, Truck } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation(); // सध्या कोणते पेज चालू आहे हे ओळखण्यासाठी
@@ -9,7 +9,6 @@ const Sidebar = () => {
     { name: 'Orders', path: '/orders', icon: <ShoppingCart size={20} /> },
     { name: 'Products', path: '/products', icon: <Package size={20} /> },
     { name: 'Customers', path: '/customers', icon: <Users size={20} /> },
-    // 👇 नवीन जोडलेला डिलिव्हरी बॉय पर्याय
     { name: 'Delivery Boys', path: '/delivery-boys', icon: <Truck size={20} /> },
     { name: 'Inventory', path: '/inventory', icon: <Archive size={20} /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 size={20} /> },
@@ -19,6 +18,17 @@ const Sidebar = () => {
   return (
     <div className="w-64 h-screen bg-[#154f30] text-white flex flex-col fixed left-0 top-0 shadow-lg">
       
+      {/* 👇 स्क्रोलबार लपवण्यासाठी ही छोटी CSS जोडली आहे */}
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
       {/* लोगो सेक्शन */}
       <div className="flex items-center gap-3 p-6 border-b border-green-800">
         <div className="bg-white text-[#154f30] p-2 rounded-full">
@@ -30,8 +40,8 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* नेव्हिगेशन लिंक्स */}
-      <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+      {/* नेव्हिगेशन लिंक्स (येथे hide-scrollbar क्लास लावला आहे) */}
+      <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto hide-scrollbar">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -40,7 +50,7 @@ const Sidebar = () => {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 isActive 
-                  ? 'bg-white text-[#154f30] font-bold shadow-md' // Figma प्रमाणे ॲक्टिव्ह पेज पांढऱ्या रंगात
+                  ? 'bg-white text-[#154f30] font-bold shadow-md' 
                   : 'text-gray-200 hover:bg-[#1b613c] hover:text-white'
               }`}
             >
