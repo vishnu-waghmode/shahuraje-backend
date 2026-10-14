@@ -75,37 +75,41 @@ const Orders = () => {
     }
   };
 
-  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy) - Order ID सुरक्षितपणे मिळवणे
-  const handleAssignDeliveryBoy = async (order, deliveryBoyId) => {
-    const targetOrderId = order?._id || order?.id;
-
-    if (!targetOrderId) {
+  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy) - सुरक्षित ID हँडलिंग
+  const handleAssignDeliveryBoy = async (orderId, deliveryBoyId) => {
+    if (!orderId) {
       alert("ऑर्डर आयडी सापडला नाही!");
       return;
     }
 
-    setAssigningId(targetOrderId);
+    setAssigningId(orderId);
     try {
       const response = await fetch(`${API_BASE_URL}/api/delivery/assign-order`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          orderId: targetOrderId.toString(), 
-          deliveryBoyId: deliveryBoyId ? deliveryBoyId.toString() : null 
+          orderId: String(orderId), 
+          deliveryBoyId: deliveryBoyId ? String(deliveryBoyId) : null 
         })
       });
 
       const data = await response.json();
       if (response.ok && data.success) {
-        // ऑर्डर्स टेबल लगेच अपडेट करणे
-        setOrders(orders.map(o => (o._id === targetOrderId || o.id === targetOrderId) ? { 
-          ...o, 
-          deliveryBoyId: deliveryBoyId,
-          deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
-          status: deliveryBoyId ? 'Processing' : o.status
-        } : o));
+        // ऑर्डर्स स्टेट अपडेट करणे
+        setOrders(prevOrders => prevOrders.map(o => {
+          const currentId = o._id || o.id;
+          if (currentId === orderId) {
+            return { 
+              ...o, 
+              deliveryBoyId: deliveryBoyId,
+              deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
+              status: deliveryBoyId ? 'Processing' : o.status
+            };
+          }
+          return o;
+        }));
 
-        if (selectedOrder && (selectedOrder._id === targetOrderId || selectedOrder.id === targetOrderId)) {
+        if (selectedOrder && (selectedOrder._id === orderId || selectedOrder.id === orderId)) {
           setSelectedOrder(prev => ({
             ...prev,
             deliveryBoyId: deliveryBoyId,
@@ -228,7 +232,7 @@ const Orders = () => {
                       <td className="p-4">
                         <select
                           value={order.deliveryBoyId?._id || order.deliveryBoyId || ''}
-                          onChange={(e) => handleAssignDeliveryBoy(order, e.target.value)}
+                          onChange={(e) => handleAssignDeliveryBoy(currentOrderId, e.target.value)}
                           disabled={assigningId === currentOrderId || order.status === 'Delivered' || order.status === 'Cancelled'}
                           className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#154f30] bg-white cursor-pointer disabled:opacity-50"
                         >
@@ -334,7 +338,7 @@ const Orders = () => {
               </div>
             </div>
 
-            {/* Modal Footer (Status & Assign) */}
+            {/* Modal Footer (Status Update) */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-gray-600">सध्याचे स्टेटस:</span>
