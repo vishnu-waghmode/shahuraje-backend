@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf, Truck } from 'lucide-react'; // 👉 Truck आयकॉन जोडले
 
 const Sidebar = () => {
   const location = useLocation(); // सध्या कोणते पेज चालू आहे हे ओळखण्यासाठी
@@ -9,6 +9,8 @@ const Sidebar = () => {
     { name: 'Orders', path: '/orders', icon: <ShoppingCart size={20} /> },
     { name: 'Products', path: '/products', icon: <Package size={20} /> },
     { name: 'Customers', path: '/customers', icon: <Users size={20} /> },
+    // 👇 नवीन जोडलेला डिलिव्हरी बॉय पर्याय
+    { name: 'Delivery Boys', path: '/delivery-boys', icon: <Truck size={20} /> },
     { name: 'Inventory', path: '/inventory', icon: <Archive size={20} /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },

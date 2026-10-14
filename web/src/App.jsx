@@ -8,6 +8,7 @@ import Products from './pages/Products';
 import Reports from './pages/Reports'; 
 import Settings from './pages/Settings'; 
 import Login from './pages/Login';
+import DeliveryBoys from './pages/DeliveryBoys';
 
 // 30 minute timeout check karne
 const ProtectedRoute = ({ children }) => {
@@ -57,6 +58,7 @@ function App() {
         <Route path="/inventory" element={<ProtectedRoute><AdminLayout><Products /></AdminLayout></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><AdminLayout><Reports /></AdminLayout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AdminLayout><Settings /></AdminLayout></ProtectedRoute>} />
+        <Route path="/delivery-boys" element={<DeliveryBoys />} />
       </Routes>
     </Router>
   );

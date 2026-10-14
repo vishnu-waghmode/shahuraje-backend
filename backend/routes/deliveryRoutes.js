@@ -115,4 +115,48 @@ const assignOrderHandler = async (req, res) => {
 router.post('/assign-order', assignOrderHandler);
 router.put('/assign-order', assignOrderHandler);
 
+const bcrypt = require('bcryptjs'); // bcryptjs पॅकेज आवश्यक आहे
+
+// ५. ॲडमिनद्वारे नवीन डिलिव्हरी बॉय तयार करणे (Web Admin साठी)
+router.post('/add-delivery-boy', async (req, res) => {
+  try {
+    const { name, email, phone, password } = req.body;
+
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ success: false, error: 'सर्व माहिती भरणे आवश्यक आहे.' });
+    }
+
+    // ईमेल आधीपासून अस्तित्वात आहे का ते तपासणे
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: 'हा ईमेल आधीपासून वापरलेला आहे.' });
+    }
+
+    // पासवर्ड सुरक्षित (Hash) करणे
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // नवीन डिलिव्हरी बॉय तयार करणे
+    const newDeliveryBoy = new User({
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role: 'delivery_boy' // 👈 मुख्य गोष्ट: थेट डिलिव्हरी बॉय रोल देणे
+    });
+
+    await newDeliveryBoy.save();
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'नवीन डिलिव्हरी बॉय यशस्वीरीत्या तयार केला!',
+      deliveryBoy: { _id: newDeliveryBoy._id, name: newDeliveryBoy.name, phone: newDeliveryBoy.phone }
+    });
+
+  } catch (err) {
+    console.error("Add Delivery Boy Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
