@@ -5,7 +5,10 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['farmer', 'admin'], default: 'farmer' }, 
+    
+    // 👉 येथे 'delivery_boy' ॲड केले आहे
+    role: { type: String, enum: ['farmer', 'admin', 'delivery_boy'], default: 'farmer' }, 
+    
     address: { type: String },
     resetOtp: { type: String },           
     resetOtpExpire: { type: Date },
