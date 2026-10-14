@@ -51,9 +51,7 @@ const Login = () => {
           localStorage.removeItem('remembered_password');
         }
 
-        unlockApp();
-
-        // 👉 Role pramane redirection:
+        // 👉 बदल १: आधी Role चेक करून योग्य पेजवर Navigate करा
         if (data.user?.role === 'delivery_boy') {
           navigate('/delivery-dashboard', { replace: true });
         } else {
@@ -64,6 +62,14 @@ const Login = () => {
             navigate('/home', { replace: true });
           }
         }
+
+        // 👉 बदल २: unlockApp ला थोडा delay द्या, जेणेकरून App.jsx मध्ये गोंधळ होणार नाही
+        setTimeout(() => {
+          if (typeof unlockApp === 'function') {
+            unlockApp();
+          }
+        }, 150);
+
       } else {
         setErrorMsg(data.error || 'ईमेल किंवा पासवर्ड चुकीचा आहे.');
       }

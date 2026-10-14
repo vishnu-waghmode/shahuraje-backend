@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate, Navigate } from 'react-router-dom'; // 👉 Navigate ॲड केले
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
@@ -23,7 +23,7 @@ import Home from './pages/Home';
 import ProductListing from './pages/ProductListing';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
-import Checkout from './pages/Checkout'; // <-- हे नवीन जोडले
+import Checkout from './pages/Checkout'; 
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
@@ -73,7 +73,7 @@ const HardwareBackButtonHandler = () => {
       ev.detail.register(100, () => {
         const currentPath = location.pathname;
 
-        if (currentPath === '/home' || currentPath === '/' || currentPath === '/login') {
+        if (currentPath === '/home' || currentPath === '/' || currentPath === '/login' || currentPath === '/delivery-dashboard') {
           if (!isExiting) {
             setIsExiting(true);
             setTimeout(() => {
@@ -174,6 +174,15 @@ const AppLockWatcher = () => {
   return null;
 };
 
+// 👉 बदल ३: डिलिव्हरी बॉय चुकूनही Home पेजवर जाऊ नये म्हणून सुरक्षारक्षक घटक
+const ProtectedHomeRoute = () => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (user?.role === 'delivery_boy') {
+    return <Navigate to="/delivery-dashboard" replace />;
+  }
+  return <Home />;
+};
+
 const App = () => (
   <IonApp>
     <CartProvider>
@@ -189,11 +198,14 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/mpin" element={<MpinScreen />} />
             <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
-            <Route path="/home" element={<Home />} />
+            
+            {/* 👉 बदल ४: साध्या Home ऐवजी ProtectedHomeRoute वापरला */}
+            <Route path="/home" element={<ProtectedHomeRoute />} />
+            
             <Route path="/productlisting" element={<ProductListing />} />
             <Route path="/product-detail" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} /> {/* <-- हे नवीन जोडले */}
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
