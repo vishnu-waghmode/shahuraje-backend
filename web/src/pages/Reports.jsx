@@ -26,15 +26,13 @@ const Reports = () => {
       const productsList = Array.isArray(productsData) ? productsData : productsData.products || [];
       const ordersList = Array.isArray(ordersData) ? ordersData : ordersData.orders || [];
 
-      // विक्रीचे प्रमाण (Quantity) आणि रक्कम (Revenue) मोजण्यासाठी मॅप
+      // विक्री (Quantity) आणि रक्कम (Revenue) मोजण्यासाठी मॅप
       const salesMap = {};
       const revenueMap = {};
 
       ordersList.forEach((order) => {
-        // रद्द केलेल्या ऑर्डर्स वगळणे
         if (order.status !== 'Cancelled') {
           (order.items || []).forEach((item) => {
-            // आयडी स्ट्रिंगमध्ये रूपांतरित करणे (Populate Object असला तरी अचूक जुळेल)
             let prodId = null;
             if (item.productId && typeof item.productId === 'object') {
               prodId = item.productId._id?.toString();
@@ -57,22 +55,25 @@ const Reports = () => {
         }
       });
 
-      // प्रॉडक्ट्ससोबत डेटा एकत्रित करणे
+      // योग्य गणित: शिल्लक स्टॉक = एकूण सेट केलेला स्टॉक - विक्री
       const finalReport = productsList.map((prod) => {
         const pId = prod._id?.toString();
         const soldCount = salesMap[pId] || 0;
         const totalRevenue = revenueMap[pId] || 0;
-        const currentStock = Number(prod.stock ?? prod.quantity ?? 0);
-        const originalTotal = currentStock + soldCount;
+
+        // प्रॉडक्टचा ॲडमिनने टाकलेला मूळ/अपडेटेड स्टॉक
+        const productStock = Number(prod.stock ?? prod.quantity ?? 0);
+
+        // शिल्लक स्टॉक = मूळ स्टॉक वजा झालेली विक्री (किमान 0)
+        const remainingStock = Math.max(0, productStock - soldCount);
 
         return {
           id: prod._id,
           name: prod.name || 'Unnamed Product',
           imageUrl: prod.imageUrl || prod.image || '',
-          totalStock: originalTotal,
           sold: soldCount,
           revenue: totalRevenue,
-          remaining: currentStock
+          remaining: remainingStock
         };
       });
 
@@ -91,9 +92,9 @@ const Reports = () => {
   const handleDownload = () => {
     if (filteredData.length === 0) return;
 
-    const headers = ['Product ID,Product Name,Total Stock,Sold Quantity,Total Revenue (INR),Remaining Stock'];
+    const headers = ['Product ID,Product Name,Sold Quantity,Total Revenue (INR),Remaining Stock'];
     const rows = filteredData.map(
-      (item) => `"${item.id}","${item.name}",${item.totalStock},${item.sold},${item.revenue},${item.remaining}`
+      (item) => `"${item.id}","${item.name}",${item.sold},${item.revenue},${item.remaining}`
     );
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
@@ -144,7 +145,6 @@ const Reports = () => {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
                   <th className="p-4 font-semibold whitespace-nowrap">उत्पादनाचे नाव</th>
-                  <th className="p-4 font-semibold text-center whitespace-nowrap">एकूण सुरुवातीचा स्टॉक</th>
                   <th className="p-4 font-semibold text-center whitespace-nowrap">विक्री (नग)</th>
                   <th className="p-4 font-semibold text-center whitespace-nowrap">एकूण विक्री (रक्कम)</th>
                   <th className="p-4 font-semibold text-center whitespace-nowrap">शिल्लक स्टॉक</th>
@@ -168,7 +168,6 @@ const Reports = () => {
                         )}
                         {item.name}
                       </td>
-                      <td className="p-4 text-center font-medium text-gray-600">{item.totalStock}</td>
                       <td className="p-4 text-center font-bold text-red-600">{item.sold}</td>
                       <td className="p-4 text-center font-bold text-gray-800">₹{item.revenue}</td>
                       <td className="p-4 text-center font-bold text-[#154f30]">{item.remaining}</td>
@@ -176,7 +175,7 @@ const Reports = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center py-8 text-gray-500">
+                    <td colSpan="4" className="text-center py-8 text-gray-500">
                       कोणतीही माहिती सापडली नाही.
                     </td>
                   </tr>
