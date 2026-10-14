@@ -15,7 +15,7 @@ const orderSchema = new mongoose.Schema({
     },
     deliveryAddress: { type: String },
 
-    // 👉 He navin fields add kara:
+    // 👉 आधीपासून असलेले Payment फील्ड्स
     paymentMethod: { 
         type: String, 
         enum: ['COD', 'ONLINE'], 
@@ -27,7 +27,22 @@ const orderSchema = new mongoose.Schema({
         default: 'Pending' 
     },
     razorpayOrderId: { type: String },
-    razorpayPaymentId: { type: String }
+    razorpayPaymentId: { type: String },
+
+    // 👇 नवीन जोडलेले Delivery Boy फील्ड्स 👇
+    deliveryBoyId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User', 
+        default: null 
+    },
+    deliveryStatus: { 
+        type: String, 
+        default: 'Pending' 
+    },
+    deliveryBoyLocation: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null }
+    }
 
 }, { timestamps: true });
 
