@@ -101,6 +101,38 @@ const Checkout = () => {
         name: 'शाहूराजे कृषी केंद्र',
         description: 'शेती साहित्य खरेदी बिल',
         order_id: createData.orderId,
+        
+        // 👉 UPI पर्याय सक्तीने स्क्रीनवर आणण्यासाठी कॉन्फिगरेशन
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay via UPI',
+                instruments: [
+                  {
+                    method: 'upi'
+                  }
+                ]
+              },
+              other: {
+                name: 'Other Payment Modes',
+                instruments: [
+                  {
+                    method: 'card'
+                  },
+                  {
+                    method: 'netbanking'
+                  }
+                ]
+              }
+            },
+            sequence: ['block.upi', 'block.other'],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
+
         retry: {
           enabled: false
         },
