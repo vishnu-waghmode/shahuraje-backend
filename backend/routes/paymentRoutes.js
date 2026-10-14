@@ -3,8 +3,6 @@ const router = express.Router();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// तुमच्या Order मॉडेलची योग्य फाईल पाथ तपासा
-// (उदा. ../models/Order किंवा ../models/orderModel)
 const Order = require('../models/Order');
 
 // Razorpay Instance
@@ -25,7 +23,6 @@ router.post('/create-order', async (req, res) => {
       return res.status(400).json({ success: false, error: 'अवैध रक्कम' });
     }
 
-    // Razorpay रक्कम पैशांमध्ये (Paise) घेते (₹100 = 10000 paise)
     const options = {
       amount: Math.round(Number(amount) * 100),
       currency: 'INR',
@@ -74,6 +71,11 @@ router.post('/verify-payment', async (req, res) => {
       });
     }
 
+    // सुरक्षिततेसाठी जुना _id असल्यास काढून टाकणे
+    if (orderData && orderData._id) {
+      delete orderData._id;
+    }
+
     // पेमेंट खरे आहे, डेटाबेसमध्ये ऑर्डर सेव्ह करा
     const newOrder = new Order({
       ...orderData,
@@ -96,7 +98,7 @@ router.post('/verify-payment', async (req, res) => {
     console.error('Payment Verification Error:', error);
     res.status(500).json({
       success: false,
-      error: 'पेमेंट व्हेरिफाय करताना त्रुटी आली'
+      error: 'पेमेंट व्हेरिफाय करताना त्रुटी आली: ' + error.message
     });
   }
 });

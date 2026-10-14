@@ -13,7 +13,22 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'Processing', 'Delivered', 'Cancelled'], 
         default: 'Pending' 
     },
-    deliveryAddress: { type: String }
+    deliveryAddress: { type: String },
+
+    // 👉 He navin fields add kara:
+    paymentMethod: { 
+        type: String, 
+        enum: ['COD', 'ONLINE'], 
+        default: 'COD' 
+    },
+    paymentStatus: { 
+        type: String, 
+        enum: ['Pending', 'Paid', 'Failed'], 
+        default: 'Pending' 
+    },
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String }
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);
