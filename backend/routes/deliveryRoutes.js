@@ -77,8 +77,8 @@ router.get('/delivery-boys', async (req, res) => {
   }
 });
 
-// 4. Admin ne order delivery boy la assign karne (Admin Web sathi)
-router.put('/assign-order', async (req, res) => {
+// 4. Admin ne order delivery boy la assign karne (POST मेथड ॲड केली)
+const assignOrderHandler = async (req, res) => {
   try {
     const { orderId, deliveryBoyId } = req.body;
 
@@ -109,6 +109,10 @@ router.put('/assign-order', async (req, res) => {
     console.error("Assign error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
-});
+};
+
+// 👉 POST आणि PUT दोन्ही चालू राहतील
+router.post('/assign-order', assignOrderHandler);
+router.put('/assign-order', assignOrderHandler);
 
 module.exports = router;

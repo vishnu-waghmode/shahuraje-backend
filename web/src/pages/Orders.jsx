@@ -75,7 +75,7 @@ const Orders = () => {
     }
   };
 
-  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy) - सुरक्षित ID हँडलिंग
+  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy)
   const handleAssignDeliveryBoy = async (orderId, deliveryBoyId) => {
     if (!orderId) {
       alert("ऑर्डर आयडी सापडला नाही!");
@@ -84,8 +84,9 @@ const Orders = () => {
 
     setAssigningId(orderId);
     try {
+      // 👉 येथे PUT ऐवजी POST वापरले आहे
       const response = await fetch(`${API_BASE_URL}/api/delivery/assign-order`, {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           orderId: String(orderId), 
