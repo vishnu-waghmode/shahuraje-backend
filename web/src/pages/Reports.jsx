@@ -15,7 +15,6 @@ const Reports = () => {
   const fetchReportData = async () => {
     try {
       setLoading(true);
-      // Products aani Orders donhi API sobat call kara
       const [productsRes, ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/products`),
         fetch(`${API_BASE_URL}/api/orders`)
@@ -27,23 +26,42 @@ const Reports = () => {
       const productsList = Array.isArray(productsData) ? productsData : productsData.products || [];
       const ordersList = Array.isArray(ordersData) ? ordersData : ordersData.orders || [];
 
-      // Pratyek product cha viklela stock calculate karne
+      // विक्रीचे प्रमाण (Quantity) आणि रक्कम (Revenue) मोजण्यासाठी मॅप
       const salesMap = {};
+      const revenueMap = {};
+
       ordersList.forEach((order) => {
-        // Jar order status 'Cancelled' naseel tarach count kara
+        // रद्द केलेल्या ऑर्डर्स वगळणे
         if (order.status !== 'Cancelled') {
           (order.items || []).forEach((item) => {
-            const prodId = item.productId || item.product?._id || item._id;
-            const quantity = Number(item.quantity) || 0;
-            salesMap[prodId] = (salesMap[prodId] || 0) + quantity;
+            // आयडी स्ट्रिंगमध्ये रूपांतरित करणे (Populate Object असला तरी अचूक जुळेल)
+            let prodId = null;
+            if (item.productId && typeof item.productId === 'object') {
+              prodId = item.productId._id?.toString();
+            } else if (item.productId) {
+              prodId = item.productId.toString();
+            } else if (item.product && typeof item.product === 'object') {
+              prodId = item.product._id?.toString();
+            } else if (item._id) {
+              prodId = item._id.toString();
+            }
+
+            if (prodId) {
+              const qty = Number(item.quantity) || 0;
+              const price = Number(item.price) || 0;
+
+              salesMap[prodId] = (salesMap[prodId] || 0) + qty;
+              revenueMap[prodId] = (revenueMap[prodId] || 0) + (qty * price);
+            }
           });
         }
       });
 
-      // Products sobat report merge karne
+      // प्रॉडक्ट्ससोबत डेटा एकत्रित करणे
       const finalReport = productsList.map((prod) => {
-        const soldCount = salesMap[prod._id] || 0;
-        // Backend madhe stock field 'stock' kiva 'quantity' asel
+        const pId = prod._id?.toString();
+        const soldCount = salesMap[pId] || 0;
+        const totalRevenue = revenueMap[pId] || 0;
         const currentStock = Number(prod.stock ?? prod.quantity ?? 0);
         const originalTotal = currentStock + soldCount;
 
@@ -53,6 +71,7 @@ const Reports = () => {
           imageUrl: prod.imageUrl || prod.image || '',
           totalStock: originalTotal,
           sold: soldCount,
+          revenue: totalRevenue,
           remaining: currentStock
         };
       });
@@ -65,18 +84,16 @@ const Reports = () => {
     }
   };
 
-  // Search filter
   const filteredData = reportData.filter((item) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // CSV Report Download Function
   const handleDownload = () => {
     if (filteredData.length === 0) return;
 
-    const headers = ['Product ID,Product Name,Total Stock,Sold,Remaining Stock'];
+    const headers = ['Product ID,Product Name,Total Stock,Sold Quantity,Total Revenue (INR),Remaining Stock'];
     const rows = filteredData.map(
-      (item) => `"${item.id}","${item.name}",${item.totalStock},${item.sold},${item.remaining}`
+      (item) => `"${item.id}","${item.name}",${item.totalStock},${item.sold},${item.revenue},${item.remaining}`
     );
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
@@ -92,7 +109,7 @@ const Reports = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">स्टॉक व इन्व्हेंटरी (Reports)</h1>
+        <h1 className="text-2xl font-bold text-gray-800">स्टॉक व विक्री अहवाल (Reports)</h1>
         <button
           onClick={handleDownload}
           className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors shadow-sm text-sm cursor-pointer"
@@ -127,8 +144,9 @@ const Reports = () => {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
                   <th className="p-4 font-semibold whitespace-nowrap">उत्पादनाचे नाव</th>
-                  <th className="p-4 font-semibold text-center whitespace-nowrap">एकूण स्टॉक</th>
-                  <th className="p-4 font-semibold text-center whitespace-nowrap">विक्री</th>
+                  <th className="p-4 font-semibold text-center whitespace-nowrap">एकूण सुरुवातीचा स्टॉक</th>
+                  <th className="p-4 font-semibold text-center whitespace-nowrap">विक्री (नग)</th>
+                  <th className="p-4 font-semibold text-center whitespace-nowrap">एकूण विक्री (रक्कम)</th>
                   <th className="p-4 font-semibold text-center whitespace-nowrap">शिल्लक स्टॉक</th>
                 </tr>
               </thead>
@@ -151,13 +169,14 @@ const Reports = () => {
                         {item.name}
                       </td>
                       <td className="p-4 text-center font-medium text-gray-600">{item.totalStock}</td>
-                      <td className="p-4 text-center font-bold text-red-500">{item.sold}</td>
+                      <td className="p-4 text-center font-bold text-red-600">{item.sold}</td>
+                      <td className="p-4 text-center font-bold text-gray-800">₹{item.revenue}</td>
                       <td className="p-4 text-center font-bold text-[#154f30]">{item.remaining}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center py-8 text-gray-500">
+                    <td colSpan="5" className="text-center py-8 text-gray-500">
                       कोणतीही माहिती सापडली नाही.
                     </td>
                   </tr>
