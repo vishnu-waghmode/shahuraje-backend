@@ -9,11 +9,11 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false); // 👉 नवीन: Remember me state
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 👉 नवीन: पेज उघडताच आधी सेव्ह केलेले credentials चेक करणे
+  // Page ughadtach aadhi save kelele credentials check karne
   useEffect(() => {
     const savedEmail = localStorage.getItem('remembered_email');
     const savedPassword = localStorage.getItem('remembered_password');
@@ -42,7 +42,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // 👉 नवीन: युझरने 'Remember Me' चेक केले असेल तर डेटा सेव्ह करणे, नाहीतर डिलीट करणे
+        // Remember Me checked asel tar credentials save karne
         if (rememberMe) {
           localStorage.setItem('remembered_email', email);
           localStorage.setItem('remembered_password', password);
@@ -53,10 +53,16 @@ const Login = () => {
 
         unlockApp();
 
-        if (!checkHasMpin()) {
-          navigate('/setup-mpin', { replace: true });
+        // 👉 Role pramane redirection:
+        if (data.user?.role === 'delivery_boy') {
+          navigate('/delivery-dashboard', { replace: true });
         } else {
-          navigate('/home', { replace: true });
+          // Sadha shetkari asel tar MPIN check karne
+          if (!checkHasMpin()) {
+            navigate('/setup-mpin', { replace: true });
+          } else {
+            navigate('/home', { replace: true });
+          }
         }
       } else {
         setErrorMsg(data.error || 'ईमेल किंवा पासवर्ड चुकीचा आहे.');
@@ -93,7 +99,7 @@ const Login = () => {
           <div className="my-auto w-full max-w-sm mx-auto py-4">
             <div className="text-center mb-5">
               <h3 className="text-2xl font-black text-gray-900 mb-1">आपले स्वागत आहे!</h3>
-              <p className="text-sm font-semibold text-gray-500">शेतकरी म्हणून लॉगिन करा</p>
+              <p className="text-sm font-semibold text-gray-500">खात्यामध्ये लॉगिन करा</p>
             </div>
 
             {errorMsg && (
@@ -138,7 +144,7 @@ const Login = () => {
                 </button>
               </div>
 
-              {/* 👉 नवीन: Remember Me चेकबॉक्स आणि पासवर्ड विसरलात लिंक */}
+              {/* Remember Me checkbox aani Forgot password */}
               <div className="flex items-center justify-between text-xs font-semibold">
                 <label className="flex items-center space-x-2 cursor-pointer text-gray-600">
                   <input 

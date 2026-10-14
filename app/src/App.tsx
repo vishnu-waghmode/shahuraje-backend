@@ -29,6 +29,8 @@ import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import MpinScreen from './pages/MpinScreen';
 import WeatherDetail from './pages/WeatherDetail';
+import DeliveryDashboard from './pages/DeliveryDashboard';
+import TrackDelivery from './pages/TrackDelivery';
 
 import { CartProvider } from './CartContext';
 import { 
@@ -196,6 +198,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/weather-detail" element={<WeatherDetail />} />
+            <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
+            <Route path="/track-order/:orderId" element={<TrackDelivery />} />
           </Routes>
         </IonRouterOutlet>
       </IonReactRouter>

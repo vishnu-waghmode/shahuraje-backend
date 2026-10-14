@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Loader2, X, CheckCircle, Clock, XCircle, Package } from 'lucide-react';
+import { Search, Eye, Loader2, X, CheckCircle, Clock, XCircle, Package, Truck } from 'lucide-react';
+
+const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState('All Orders');
   const tabs = ['All Orders', 'Pending', 'Processing', 'Delivered'];
 
   const [orders, setOrders] = useState([]);
+  const [deliveryBoys, setDeliveryBoys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // 👉 पॉप-अप साठी नवीन States
+  // पॉप-अप साठी States
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [assigningId, setAssigningId] = useState(null);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrdersAndDeliveryBoys();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrdersAndDeliveryBoys = async () => {
     try {
-      const response = await fetch('https://shahuraje-backend-1.onrender.com/api/orders/');
-      const data = await response.json();
-      if (response.ok) {
-        setOrders(data);
+      setLoading(true);
+      const [ordersRes, boysRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/orders/`),
+        fetch(`${API_BASE_URL}/api/delivery/delivery-boys`)
+      ]);
+
+      const ordersData = await ordersRes.json();
+      const boysData = await boysRes.json();
+
+      if (ordersRes.ok) {
+        setOrders(Array.isArray(ordersData) ? ordersData : ordersData.orders || []);
+      }
+      if (boysRes.ok && boysData.success) {
+        setDeliveryBoys(boysData.deliveryBoys || []);
       }
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -36,21 +50,19 @@ const Orders = () => {
     return new Date(dateString).toLocaleDateString('en-GB', options);
   };
 
-  // 👉 स्टेटस अपडेट करण्याचे फंक्शन (POST मेथडसह अपडेट केले आहे)
+  // स्टेटस अपडेट करण्याचे फंक्शन
   const handleStatusUpdate = async (orderId, newStatus) => {
     setIsUpdating(true);
     try {
-     const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/orders/${orderId}/status`, {
-        method: 'POST', // 👉 404 एरर टाळण्यासाठी POST मेथड वापरली आहे
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
 
       if (response.ok) {
-        // टेबलमधील डेटा लगेच अपडेट करणे
         setOrders(orders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
-        // पॉप-अप मधील डेटा अपडेट करणे
-        setSelectedOrder(prev => ({ ...prev, status: newStatus }));
+        setSelectedOrder(prev => (prev ? { ...prev, status: newStatus } : null));
         alert("ऑर्डरचे स्टेटस यशस्वीरित्या अपडेट झाले!");
       } else {
         alert("स्टेटस अपडेट करताना सर्व्हरवर एरर आला.");
@@ -60,6 +72,47 @@ const Orders = () => {
       alert("सर्व्हरशी संपर्क होऊ शकला नाही.");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  // डिलिव्हरी बॉय नेमणूक (Assign Delivery Boy)
+  const handleAssignDeliveryBoy = async (orderId, deliveryBoyId) => {
+    setAssigningId(orderId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/delivery/assign-order`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, deliveryBoyId })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        // ऑर्डर्स टेबल लगेच अपडेट करणे
+        setOrders(orders.map(o => o._id === orderId ? { 
+          ...o, 
+          deliveryBoyId: deliveryBoyId,
+          deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
+          status: deliveryBoyId ? 'Processing' : o.status
+        } : o));
+
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder(prev => ({
+            ...prev,
+            deliveryBoyId: deliveryBoyId,
+            deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
+            status: deliveryBoyId ? 'Processing' : prev.status
+          }));
+        }
+
+        alert("डिलिव्हरी बॉय यशस्वीरीत्या नेमला गेला!");
+      } else {
+        alert("एरर: " + (data.error || "अपडेट होऊ शकले नाही"));
+      }
+    } catch (error) {
+      console.error("Assign error:", error);
+      alert("सर्व्हरशी संपर्क होऊ शकला नाही.");
+    } finally {
+      setAssigningId(null);
     }
   };
 
@@ -121,13 +174,14 @@ const Orders = () => {
                 <th className="p-4 font-semibold whitespace-nowrap">Date</th>
                 <th className="p-4 font-semibold whitespace-nowrap">Total Amount</th>
                 <th className="p-4 font-semibold whitespace-nowrap">Status</th>
+                <th className="p-4 font-semibold whitespace-nowrap">डिलिव्हरी बॉय (Assign)</th>
                 <th className="p-4 font-semibold text-center whitespace-nowrap">Action</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="p-10 text-center">
+                  <td colSpan="7" className="p-10 text-center">
                     <Loader2 className="mx-auto animate-spin text-[#154f30]" size={32} />
                     <p className="mt-2 text-gray-500">डेटा लोड होत आहे...</p>
                   </td>
@@ -157,6 +211,24 @@ const Orders = () => {
                         {order.status}
                       </span>
                     </td>
+                    
+                    {/* 👉 नवीन: डिलिव्हरी बॉय असाइनमेंट ड्रॉपडाऊन */}
+                    <td className="p-4">
+                      <select
+                        value={order.deliveryBoyId?._id || order.deliveryBoyId || ''}
+                        onChange={(e) => handleAssignDeliveryBoy(order._id, e.target.value)}
+                        disabled={assigningId === order._id || order.status === 'Delivered' || order.status === 'Cancelled'}
+                        className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:border-[#154f30] bg-white cursor-pointer disabled:opacity-50"
+                      >
+                        <option value="">-- निवडा --</option>
+                        {deliveryBoys.map((boy) => (
+                          <option key={boy._id} value={boy._id}>
+                            {boy.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+
                     <td className="p-4 text-center">
                       <button 
                         onClick={() => setSelectedOrder(order)}
@@ -170,7 +242,7 @@ const Orders = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="p-10 text-center text-gray-500">
+                  <td colSpan="7" className="p-10 text-center text-gray-500">
                     कोणतीही ऑर्डर सापडली नाही.
                   </td>
                 </tr>
@@ -180,7 +252,7 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* 👉 पॉप-अप (Modal) डिझाईन */}
+      {/* पॉप-अप (Modal) */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -246,7 +318,7 @@ const Orders = () => {
               </div>
             </div>
 
-            {/* Modal Footer (Status Update) */}
+            {/* Modal Footer (Status & Assign) */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-gray-600">सध्याचे स्टेटस:</span>
