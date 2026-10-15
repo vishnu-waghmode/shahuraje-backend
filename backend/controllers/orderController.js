@@ -17,12 +17,23 @@ exports.createOrder = async (req, res) => {
         const adminNotification = new Notification({
             userId: null, // null म्हणजे हे ॲडमिनसाठी आहे
             title: 'नवीन ऑर्डर प्राप्त!',
-            // 👇 इथे मी मेसेज एकाच लाईनमध्ये व्यवस्थित लिहिला आहे
             message: `ऑर्डर #${savedOrder._id.toString().substring(18).toUpperCase()} - ₹${savedOrder.totalAmount} ची नवीन ऑर्डर आली आहे.`,
             type: 'ORDER',
             relatedId: savedOrder._id
         });
         await adminNotification.save();
+
+        // 🔴 👉 शेतकऱ्यासाठी नवीन नोटिफिकेशन (स्वतःची ऑर्डर कन्फर्म झाल्याचे सांगण्यासाठी)
+        if (savedOrder.userId) {
+            const farmerNotification = new Notification({
+                userId: savedOrder.userId,
+                title: 'ऑर्डर यशस्वी! ✅',
+                message: `तुमची ₹${savedOrder.totalAmount} ची ऑर्डर यशस्वीरीत्या नोंदवली गेली आहे. लवकरच ती स्वीकारली जाईल.`,
+                type: 'ORDER',
+                relatedId: savedOrder._id
+            });
+            await farmerNotification.save();
+        }
 
         res.status(201).json({ 
             success: true,

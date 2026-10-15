@@ -49,6 +49,26 @@ const AdminLayout = ({ children }) => {
     }
   };
 
+  // 🔴 नवीन फंक्शन: बेल आयकॉनवर क्लिक केल्यावर लाल आकडा गायब करणे
+  const handleBellClick = () => {
+    setIsOpen(!isOpen);
+    
+    // जर ड्रॉपडाऊन उघडले आणि लाल आकडा असेल, तर तो त्वरित झिरो करा
+    if (!isOpen && unreadCount > 0) {
+      setUnreadCount(0); // लाल बॅज लगेच लपवा
+      
+      // बॅकएंडमधील सर्व न वाचलेल्या मेसेजेसना 'Read' मार्क करा
+      notifications.forEach(notif => {
+        if (!notif.isRead) {
+          fetch(`${API_BASE_URL}/api/notifications/mark-read/${notif._id}`, { method: 'PUT' });
+        }
+      });
+      
+      // लोकल स्क्रीनवरही सर्व वाचलेले दाखवा (हिरवा रंग काढून टाका)
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    }
+  };
+
   // वेळ फॉरमॅट करणे (उदा. 10:30 AM)
   const formatTime = (dateString) => {
     const date = new Date(dateString);
@@ -70,7 +90,7 @@ const AdminLayout = ({ children }) => {
             
             {/* Bell Button */}
             <button 
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={handleBellClick} // 👈 इथे नवीन फंक्शन लावले
               className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
             >
               <Bell size={24} className="text-gray-700" />
@@ -96,7 +116,7 @@ const AdminLayout = ({ children }) => {
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-20 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200">
                   <div className="bg-[#154f30] text-white px-4 py-3 flex justify-between items-center">
                     <h3 className="font-bold text-sm">नोटिफिकेशन्स</h3>
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded-md">{unreadCount} नवीन</span>
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded-md">{unreadCount > 0 ? `${unreadCount} नवीन` : '0 नवीन'}</span>
                   </div>
                   
                   <div className="max-h-80 overflow-y-auto">
