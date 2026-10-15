@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Route, Routes, useLocation, useNavigate, Navigate } from 'react-router-dom'; // 👉 Navigate ॲड केले
+import { Route, Routes, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
+
+// 👉 १. Firebase Push Notifications साठी आवश्यक आयात
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
 
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
@@ -175,7 +179,7 @@ const AppLockWatcher = () => {
   return null;
 };
 
-// 👉 बदल ३: डिलिव्हरी बॉय चुकूनही Home पेजवर जाऊ नये म्हणून सुरक्षारक्षक घटक
+// डिलिव्हरी बॉय चुकूनही Home पेजवर जाऊ नये म्हणून सुरक्षारक्षक घटक
 const ProtectedHomeRoute = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user?.role === 'delivery_boy') {
@@ -184,41 +188,105 @@ const ProtectedHomeRoute = () => {
   return <Home />;
 };
 
-const App = () => (
-  <IonApp>
-    <CartProvider>
-      <IonReactRouter>
-        <TopRouteLoader />
-        <HardwareBackButtonHandler />
-        <AppLockWatcher />
+const App = () => {
 
-        <IonRouterOutlet>
-          <Routes>
-            <Route path="/" element={<Splash />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/mpin" element={<MpinScreen />} />
-            <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
-            
-            {/* 👉 बदल ४: साध्या Home ऐवजी ProtectedHomeRoute वापरला */}
-            <Route path="/home" element={<ProtectedHomeRoute />} />
-            
-            <Route path="/productlisting" element={<ProductListing />} />
-            <Route path="/product-detail" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/weather-detail" element={<WeatherDetail />} />
-            <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
-            <Route path="/track-order/:orderId" element={<TrackDelivery />} />
-            <Route path="/notifications" element={<Notifications />} />
-          </Routes>
-        </IonRouterOutlet>
-      </IonReactRouter>
-    </CartProvider>
-  </IonApp>
-);
+  // 👉 २. Firebase Push Notifications चा मुख्य सेटअप
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      setupPushNotifications();
+    }
+  }, []);
+
+  const setupPushNotifications = async () => {
+    try {
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') {
+        console.log('युझरने नोटिफिकेशनला परवानगी दिली नाही');
+        return;
+      }
+
+      await PushNotifications.register();
+
+      // 👉 टोकन मिळवणे आणि बॅकएंडला पाठवणे
+      PushNotifications.addListener('registration', async (token) => {
+        console.log('Firebase FCM Token: ', token.value);
+        localStorage.setItem('fcm_token', token.value);
+
+        const userString = localStorage.getItem('user');
+        const user = userString ? JSON.parse(userString) : null;
+        const userId = user?._id || user?.id;
+        
+        if (userId) {
+          try {
+            await fetch(`https://shahuraje-backend-1.onrender.com/api/users/update-fcm-token/${userId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fcmToken: token.value })
+            });
+            console.log("टोकन बॅकएंडला यशस्वीरित्या पाठवला!");
+          } catch (err) {
+            console.error("टोकन पाठवताना एरर:", err);
+          }
+        }
+      });
+
+      PushNotifications.addListener('registrationError', (error) => {
+        console.error('Registration Error: ', JSON.stringify(error));
+      });
+
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('ॲप उघडे असताना नोटिफिकेशन आले: ', notification);
+      });
+
+      // 🔴 नोटिफिकेशनवर क्लिक केल्यावर थेट Notifications पेजवर जाणे
+      PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('नोटिफिकेशनवर क्लिक केले: ', notification);
+        window.location.href = '/notifications';
+      });
+    } catch (error) {
+      console.error("Push notification setup error:", error);
+    }
+  };
+
+  return (
+    <IonApp>
+      <CartProvider>
+        <IonReactRouter>
+          <TopRouteLoader />
+          <HardwareBackButtonHandler />
+          <AppLockWatcher />
+
+          <IonRouterOutlet>
+            <Routes>
+              <Route path="/" element={<Splash />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/mpin" element={<MpinScreen />} />
+              <Route path="/setup-mpin" element={<MpinScreen isSettingUp={true} />} />
+              
+              <Route path="/home" element={<ProtectedHomeRoute />} />
+              
+              <Route path="/productlisting" element={<ProductListing />} />
+              <Route path="/product-detail" element={<ProductDetail />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/weather-detail" element={<WeatherDetail />} />
+              <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
+              <Route path="/track-order/:orderId" element={<TrackDelivery />} />
+              <Route path="/notifications" element={<Notifications />} />
+            </Routes>
+          </IonRouterOutlet>
+        </IonReactRouter>
+      </CartProvider>
+    </IonApp>
+  );
+};
 
 export default App;

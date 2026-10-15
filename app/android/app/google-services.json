@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1029150470954",
+    "project_id": "shahuraje-app",
+    "storage_bucket": "shahuraje-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029150470954:android:69c5650dc41e7cdb5c6453",
+        "android_client_info": {
+          "package_name": "com.shahuraje.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKr_T_su9H2dykivtIh1tkLyFcDhJUggI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,8 +3,11 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const User = require('../models/User');
-const Notification = require('../models/Notification'); // 👈 हे नव्याने ॲड केले आहे
+const Notification = require('../models/Notification'); 
 const bcrypt = require('bcryptjs'); 
+
+// 👉 १. Firebase Admin इम्पोर्ट करा (पुश नोटिफिकेशनसाठी)
+const admin = require('firebase-admin'); 
 
 // 1. Delivery boy la assign jhalelya orders milvane
 router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
@@ -39,7 +42,7 @@ router.put('/update-status/:orderId', async (req, res) => {
     if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
 
     if (deliveryStatus === 'Picked_Up') {
-      updateData.status = 'Out for Delivery'; // Processing ऐवजी आता थेट Out for Delivery
+      updateData.status = 'Out for Delivery'; 
     } else if (deliveryStatus === 'Delivered') {
       updateData.status = 'Delivered';
       updateData.paymentStatus = 'Paid';
@@ -68,6 +71,7 @@ router.put('/update-status/:orderId', async (req, res) => {
         }
 
         if (notifTitle) {
+            // १. डेटाबेसमध्ये नोटिफिकेशन सेव्ह करा (In-App Notification)
             const userNotification = new Notification({
                 userId: order.userId, 
                 title: notifTitle,
@@ -76,6 +80,30 @@ router.put('/update-status/:orderId', async (req, res) => {
                 relatedId: order._id
             });
             await userNotification.save();
+
+            // २. Firebase द्वारे मोबाईलच्या स्क्रीनवर Push Notification पाठवा (नवीन कोड) 🟢
+            try {
+                // शेतकऱ्याचा (User) डेटा शोधा जेणेकरून त्याचा FCM Token मिळेल
+                const customer = await User.findById(order.userId);
+                
+                if (customer && customer.fcmToken) {
+                    const message = {
+                        notification: {
+                            title: notifTitle,
+                            body: notifMessage
+                        },
+                        token: customer.fcmToken // शेतकऱ्याच्या मोबाईलचा युनिक आयडी
+                    };
+                    
+                    // Firebase ला मेसेज पाठवायला सांगणे
+                    await admin.messaging().send(message);
+                    console.log('Firebase Push Notification यशस्वीरीत्या पाठवले!');
+                } else {
+                    console.log('शेतकऱ्याचा FCM Token सापडला नाही, त्यामुळे Push Notification गेले नाही.');
+                }
+            } catch (pushError) {
+                console.error('Push notification पाठवताना एरर:', pushError);
+            }
         }
     }
 

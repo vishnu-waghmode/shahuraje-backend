@@ -3,6 +3,15 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+// 👉 १. Firebase Admin आयात करणे
+const admin = require("firebase-admin");
+const serviceAccount = require("./firebase-admin-key.json"); // फाईल याच नावावर सेव्ह केली आहे याची खात्री करा
+
+// 👉 २. Firebase ॲप इनिशियलाईज करणे
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -11,7 +20,7 @@ app.use(express.json());
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
-const paymentRoutes = require('./routes/paymentRoutes'); // <-- पेमेंट राऊट इम्पोर्ट केला
+const paymentRoutes = require('./routes/paymentRoutes'); 
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
@@ -24,7 +33,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/payment', paymentRoutes); // <-- पेमेंट राऊट ऍक्टिव्हेट केला
+app.use('/api/payment', paymentRoutes); 
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes);
 
