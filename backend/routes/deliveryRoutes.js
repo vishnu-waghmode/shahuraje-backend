@@ -83,7 +83,6 @@ router.put('/update-status/:orderId', async (req, res) => {
 
             // २. Firebase द्वारे मोबाईलच्या स्क्रीनवर Push Notification पाठवा (नवीन कोड) 🟢
             try {
-                // शेतकऱ्याचा (User) डेटा शोधा जेणेकरून त्याचा FCM Token मिळेल
                 const customer = await User.findById(order.userId);
                 
                 if (customer && customer.fcmToken) {
@@ -92,10 +91,17 @@ router.put('/update-status/:orderId', async (req, res) => {
                             title: notifTitle,
                             body: notifMessage
                         },
-                        token: customer.fcmToken // शेतकऱ्याच्या मोबाईलचा युनिक आयडी
+                        // 👉 बॅकग्राउंडला मेसेज सक्तीने पाठवण्यासाठी नवीन कोड
+                        android: {
+                            priority: 'high',
+                            notification: {
+                                channelId: 'shahuraje_orders',
+                                sound: 'default'
+                            }
+                        },
+                        token: customer.fcmToken
                     };
                     
-                    // Firebase ला मेसेज पाठवायला सांगणे
                     await admin.messaging().send(message);
                     console.log('Firebase Push Notification यशस्वीरीत्या पाठवले!');
                 } else {

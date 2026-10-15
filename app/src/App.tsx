@@ -179,7 +179,6 @@ const AppLockWatcher = () => {
   return null;
 };
 
-// डिलिव्हरी बॉय चुकूनही Home पेजवर जाऊ नये म्हणून सुरक्षारक्षक घटक
 const ProtectedHomeRoute = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   if (user?.role === 'delivery_boy') {
@@ -190,7 +189,6 @@ const ProtectedHomeRoute = () => {
 
 const App = () => {
 
-  // 👉 २. Firebase Push Notifications चा मुख्य सेटअप
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       setupPushNotifications();
@@ -210,6 +208,17 @@ const App = () => {
       }
 
       await PushNotifications.register();
+
+      // 👉 Android 8+ साठी Notification Channel (बॅकग्राउंड मेसेजसाठी अत्यंत आवश्यक)
+      if (Capacitor.getPlatform() === 'android') {
+        PushNotifications.createChannel({
+          id: 'shahuraje_orders',
+          name: 'Order Updates',
+          description: 'ऑर्डरचे अपडेट्स मिळवण्यासाठी',
+          importance: 5,
+          visibility: 1,
+        }).then(() => console.log('Notification Channel तयार झाला!'));
+      }
 
       // 👉 टोकन मिळवणे आणि बॅकएंडला पाठवणे
       PushNotifications.addListener('registration', async (token) => {
