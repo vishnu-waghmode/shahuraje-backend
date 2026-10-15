@@ -3,7 +3,8 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const User = require('../models/User');
-const bcrypt = require('bcryptjs'); // bcryptjs पॅकेज आवश्यक आहे
+const Notification = require('../models/Notification'); // 👈 हे नव्याने ॲड केले आहे
+const bcrypt = require('bcryptjs'); 
 
 // 1. Delivery boy la assign jhalelya orders milvane
 router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
@@ -30,7 +31,7 @@ router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
   }
 });
 
-// 2. Delivery boy ne status update karne
+// 2. Delivery boy ne status update karne + शेतकऱ्याला नोटिफिकेशन पाठवणे 🔴
 router.put('/update-status/:orderId', async (req, res) => {
   try {
     const { deliveryStatus, lat, lng } = req.body;
@@ -38,7 +39,7 @@ router.put('/update-status/:orderId', async (req, res) => {
     if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
 
     if (deliveryStatus === 'Picked_Up') {
-      updateData.status = 'Processing';
+      updateData.status = 'Out for Delivery'; // Processing ऐवजी आता थेट Out for Delivery
     } else if (deliveryStatus === 'Delivered') {
       updateData.status = 'Delivered';
       updateData.paymentStatus = 'Paid';
@@ -46,7 +47,38 @@ router.put('/update-status/:orderId', async (req, res) => {
     if (lat && lng) {
       updateData.deliveryBoyLocation = { lat, lng };
     }
+    
     const order = await Order.findByIdAndUpdate(req.params.orderId, updateData, { new: true });
+
+    if (!order) {
+        return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    // 👉 शेतकऱ्याला नोटिफिकेशन पाठवण्याचा कोड
+    if (order.userId) {
+        let notifTitle = '';
+        let notifMessage = '';
+
+        if (deliveryStatus === 'Picked_Up') {
+            notifTitle = 'डिलिव्हरीसाठी निघाली! 🚚';
+            notifMessage = `डिलिव्हरी बॉय तुमची ऑर्डर #${order._id.toString().substring(18).toUpperCase()} घेऊन निघाला आहे. लवकरच ती तुमच्यापर्यंत पोहोचेल.`;
+        } else if (deliveryStatus === 'Delivered') {
+            notifTitle = 'ऑर्डर पोहोचली (Delivered) 🎉';
+            notifMessage = 'तुमची ऑर्डर यशस्वीरीत्या तुम्हाला देण्यात आली आहे. शाहूराजे कृषी केंद्रावर खरेदी केल्याबद्दल धन्यवाद!';
+        }
+
+        if (notifTitle) {
+            const userNotification = new Notification({
+                userId: order.userId, 
+                title: notifTitle,
+                message: notifMessage,
+                type: 'ORDER',
+                relatedId: order._id
+            });
+            await userNotification.save();
+        }
+    }
+
     res.status(200).json({ success: true, order });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -56,7 +88,6 @@ router.put('/update-status/:orderId', async (req, res) => {
 // 3. Sarv delivery boys chi list milvane (Admin Web Dropdown sathi)
 router.get('/delivery-boys', async (req, res) => {
   try {
-    // 👉 येथे आपण 'email' देखील मागवला आहे
     const deliveryBoys = await User.find({ role: 'delivery_boy' }).select('name phone email _id');
     res.status(200).json({ success: true, deliveryBoys });
   } catch (err) {
@@ -116,13 +147,12 @@ router.post('/add-delivery-boy', async (req, res) => {
   }
 });
 
-// 👉 ६. ॲडमिनद्वारे डिलिव्हरी बॉयची माहिती आणि पासवर्ड अपडेट करणे (नवीन ॲड केले)
+// 6. ॲडमिनद्वारे डिलिव्हरी बॉयची माहिती आणि पासवर्ड अपडेट करणे
 router.put('/update-delivery-boy/:id', async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
     const updateData = { name, email, phone };
 
-    // जर ॲडमिनने नवीन पासवर्ड टाकला असेल, तरच तो अपडेट करा
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(password, salt);
