@@ -3,13 +3,13 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-// 👉 १. Firebase Admin आयात करणे
-const admin = require("firebase-admin");
-const serviceAccount = require("./firebase-admin-key.json"); // फाईल याच नावावर सेव्ह केली आहे याची खात्री करा
+// 👉 १. बदललेला Firebase Admin सेटअप (नवीन व्हर्जनसाठी)
+const { initializeApp, cert } = require("firebase-admin/app");
+const serviceAccount = require("./firebase-admin-key.json"); 
 
 // 👉 २. Firebase ॲप इनिशियलाईज करणे
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+initializeApp({
+  credential: cert(serviceAccount)
 });
 
 const app = express();
