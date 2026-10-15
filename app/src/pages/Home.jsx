@@ -3,7 +3,7 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, ShoppingCart, Home as HomeIcon, User, Package, Plus, 
-  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain, Bell // 👈 Bell आयात केला आहे
+  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain, Bell 
 } from 'lucide-react';
 import { useCart } from '../CartContext';
 
@@ -11,10 +11,10 @@ const Home = () => {
   const navigate = useNavigate();
   const { cartItems, addToCart } = useCart();
 
-  // युझरची माहिती आणि ID
-  const savedUser = JSON.parse(localStorage.getItem('user'));
+  // 👉 १. सुरक्षितपणे युझरची माहिती आणि ID घेणे
+  const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userName = savedUser?.name || 'शेतकरी मित्र';
-  const userId = savedUser?._id; // 👈 युझरचा आयडी घेतला
+  const userId = savedUser?._id || savedUser?.id; // 👈 इथे सुरक्षित ID घेतला आहे
   
   const userInitials = userName
     .split(' ')
@@ -88,7 +88,7 @@ const Home = () => {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        if (!userId) return;
+        if (!userId) return; // जर userId नसेल तर API कॉल करू नका
         const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/notifications/${userId}`);
         const data = await response.json();
         if (response.ok && data.success) {

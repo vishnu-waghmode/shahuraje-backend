@@ -9,9 +9,9 @@ const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // लोकल स्टोरेजमधून युझरचा ID घेणे
-  const user = JSON.parse(localStorage.getItem('user'));
-  const userId = user?._id; 
+  // 👉 सुरक्षितपणे लोकल स्टोरेजमधून युझरचा ID घेणे
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const userId = user?._id || user?.id; 
 
   useEffect(() => {
     if (userId) {
@@ -124,6 +124,7 @@ const Notifications = () => {
       </div>
 
     </div>
+    
   );
 };
 
