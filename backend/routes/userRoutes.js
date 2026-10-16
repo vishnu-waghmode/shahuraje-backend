@@ -9,6 +9,7 @@ router.post('/login', userController.loginUser);
 router.post('/send-otp', userController.sendOtp);
 router.post('/reset-password', userController.resetPasswordWithOtp);
 
+
 // 👉 युझरचा FCM Token सेव्ह करण्यासाठी नवीन API
 router.put('/update-fcm-token/:userId', async (req, res) => {
     try {
