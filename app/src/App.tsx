@@ -254,7 +254,7 @@ const App = () => {
       // 🔴 नोटिफिकेशनवर क्लिक केल्यावर थेट Notifications पेजवर जाणे
       PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
         console.log('नोटिफिकेशनवर क्लिक केले: ', notification);
-        window.location.href = '/notifications';
+        // window.location.href = '/notifications';
       });
     } catch (error) {
       console.error("Push notification setup error:", error);
