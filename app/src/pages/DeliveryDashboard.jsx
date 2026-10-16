@@ -40,22 +40,10 @@ const DeliveryDashboard = () => {
     }
   };
 
+  // 👉 अपडेटेड: Geolocation काढून थेट API कॉल करणे
   const handleUpdateStatus = (orderId, newStatus) => {
     setUpdatingId(orderId);
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          await sendStatusRequest(orderId, newStatus, position.coords.latitude, position.coords.longitude);
-        },
-        async () => {
-          await sendStatusRequest(orderId, newStatus, null, null);
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    } else {
-      sendStatusRequest(orderId, newStatus, null, null);
-    }
+    sendStatusRequest(orderId, newStatus, null, null);
   };
 
   const sendStatusRequest = async (orderId, newStatus, lat, lng) => {
@@ -128,7 +116,7 @@ const DeliveryDashboard = () => {
                   {/* Status & Amount Tag */}
                   <div className="flex justify-between items-center border-b border-gray-50 pb-2.5">
                     <span className="text-xs font-bold px-2.5 py-1 bg-green-50 text-[#0c542b] rounded-lg">
-                      ₹{order.totalAmount} • {order.paymentMethod || 'COD'}
+                      ₹{order.totalAmount} ({order.paymentMethod || 'COD'})
                     </span>
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                       order.deliveryStatus === 'Picked_Up' 
