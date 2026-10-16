@@ -37,6 +37,10 @@ router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
 // 2. Delivery boy ne status update karne + शेतकऱ्याला नोटिफिकेशन पाठवणे 🔴
 router.put('/update-status/:orderId', async (req, res) => {
   try {
+    // 👉 आपण चेक करूया की API कॉल होतेय का आणि कोणता डेटा येतोय
+    console.log("👉 Status Update API कॉल झाली! Order ID:", req.params.orderId);
+    console.log("👉 Frontend कडून आलेला डेटा:", req.body);
+
     const { deliveryStatus, lat, lng } = req.body;
     const updateData = {};
     if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
@@ -57,6 +61,8 @@ router.put('/update-status/:orderId', async (req, res) => {
         return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
+    console.log("👉 ऑर्डर डेटाबेसमध्ये अपडेट झाली. Customer ID:", order.userId);
+
     // 👉 शेतकऱ्याला नोटिफिकेशन पाठवण्याचा कोड
     if (order.userId) {
         let notifTitle = '';
@@ -68,6 +74,8 @@ router.put('/update-status/:orderId', async (req, res) => {
         } else if (deliveryStatus === 'Delivered') {
             notifTitle = 'ऑर्डर पोहोचली (Delivered) 🎉';
             notifMessage = 'तुमची ऑर्डर यशस्वीरीत्या तुम्हाला देण्यात आली आहे. शाहूराजे कृषी केंद्रावर खरेदी केल्याबद्दल धन्यवाद!';
+        } else {
+            console.log("⚠️ Status मॅच झाले नाही. आलेले स्टेटस:", deliveryStatus);
         }
 
         if (notifTitle) {
@@ -81,7 +89,7 @@ router.put('/update-status/:orderId', async (req, res) => {
             });
             await userNotification.save();
 
-            // २. Firebase द्वारे मोबाईलच्या स्क्रीनवर Push Notification पाठवा (नवीन कोड) 🟢
+            // २. Firebase द्वारे मोबाईलच्या स्क्रीनवर Push Notification पाठवा
             try {
                 const customer = await User.findById(order.userId);
                 
@@ -103,18 +111,19 @@ router.put('/update-status/:orderId', async (req, res) => {
                     };
                     
                     await admin.messaging().send(message);
-                    console.log('Firebase Push Notification यशस्वीरीत्या पाठवले!');
+                    console.log('✅ Firebase Push Notification यशस्वीरीत्या पाठवले!');
                 } else {
-                    console.log('शेतकऱ्याचा FCM Token सापडला नाही, त्यामुळे Push Notification गेले नाही.');
+                    console.log('❌ शेतकऱ्याचा FCM Token सापडला नाही, त्यामुळे Push Notification गेले नाही.');
                 }
             } catch (pushError) {
-                console.error('Push notification पाठवताना एरर:', pushError);
+                console.error('❌ Push notification पाठवताना एरर:', pushError);
             }
         }
     }
 
     res.status(200).json({ success: true, order });
   } catch (err) {
+    console.error('❌ API मध्ये एरर आला:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
