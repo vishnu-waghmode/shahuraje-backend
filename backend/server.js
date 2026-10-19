@@ -14,7 +14,10 @@ initializeApp({
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// 🔴 महत्त्वाची टीप: Base64 इमेज मोठी असू शकते, त्यामुळे limit वाढवणे गरजेचे आहे.
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes इम्पोर्ट करणे
 const productRoutes = require('./routes/productRoutes');
@@ -23,6 +26,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes'); 
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const advisoryRoutes = require('./routes/advisoryRoutes'); // 👉 नवीन Crop Advisory Route
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -36,6 +40,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes); 
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/advisory', advisoryRoutes); // 
 
 app.get('/', (req, res) => {
     res.send('शाहूराजे कृषी केंद्र - Backend API चालू आहे...');
