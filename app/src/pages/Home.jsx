@@ -180,11 +180,11 @@ const Home = () => {
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 14px)' }}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-15 h-15 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-12 h-12 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <img 
                   src="/shahuraje1.png" 
                   alt="शाहूराजे लोगो" 
-                  style={{ width: '80px', height: '80px' }}
+                  style={{ width: '50px', height: '50px' }}
                   className="object-contain block"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -261,7 +261,7 @@ const Home = () => {
               )}
             </div>
 
-            {/* ३. बॅनर कॅरोसेल (Premium Banner काढला आहे) */}
+            {/* ३. बॅनर कॅरोसेल */}
             <div className="relative overflow-hidden rounded-3xl shadow-lg h-44">
               <div 
                 className="flex h-full transition-transform duration-700 ease-out"
@@ -436,30 +436,6 @@ const Home = () => {
                     : 'bg-gradient-to-r from-[#0c542b]/95 via-[#0c542b]/75 to-transparent'
               }`}></div>
 
-              {isRaining && (
-                <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                  {[...Array(24)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="absolute w-[1.5px] bg-gradient-to-b from-transparent via-cyan-200 to-white/95 rounded-full animate-rain-drop"
-                      style={{
-                        height: `${Math.random() * 22 + 15}px`,
-                        left: `${(i * 4.2) + (Math.random() * 2)}%`,
-                        animationDelay: `${Math.random() * 0.7}s`,
-                        animationDuration: `${0.55 + Math.random() * 0.25}s`
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {isWindy && (
-                <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-                  <div className="absolute top-1/4 -left-full w-full h-8 bg-gradient-to-r from-transparent via-white/25 to-transparent blur-sm animate-wind-gust"></div>
-                  <div className="absolute top-2/3 -left-full w-full h-12 bg-gradient-to-r from-transparent via-cyan-100/20 to-transparent blur-md animate-wind-gust" style={{ animationDelay: '1.2s' }}></div>
-                </div>
-              )}
-
               <div className="relative z-10">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center space-x-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/15">
@@ -548,9 +524,9 @@ const Home = () => {
         </div>
       </IonContent>
 
-      {/* ७. बॉटम नेव्हिगेशन बार (Floating Action Button सह) */}
+      {/* ७. बॉटम नेव्हिगेशन बार (कॅमेरा आयकॉन बारच्या आत, पण बाकिच्यांपेक्षा थोडा मोठा आणि स्टायलिश) */}
       <div 
-        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div 
@@ -569,14 +545,15 @@ const Home = () => {
           <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
         </div>
 
-        {/* 👉 Floating Camera Button (मधला बटण) */}
-        <div className="relative -top-6">
-          <div 
-            onClick={() => navigate('/crop-advisory')} 
-            className="w-14 h-14 bg-gradient-to-br from-[#0c542b] to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_8px_20px_rgba(12,84,43,0.4)] border-[4px] border-white cursor-pointer active:scale-95 transition-transform"
-          >
-            <Camera size={24} className="stroke-[2.5]" />
+        {/* 👉 Professional Camera Button (बारच्या आत, पण थोडा मोठा आणि आकर्षक) */}
+        <div 
+          onClick={() => navigate('/crop-advisory')} 
+          className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"
+        >
+          <div className="w-12 h-12 bg-gradient-to-tr from-[#0c542b] via-emerald-600 to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_rgba(12,84,43,0.35)] group-hover:scale-105 transition-transform">
+            <Camera size={24} className="stroke-[2.2]" />
           </div>
+          <span className="text-[10px] font-bold text-[#0c542b] mt-0.5">डॉक्टर</span>
         </div>
 
         <div 

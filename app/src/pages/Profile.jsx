@@ -3,12 +3,15 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, MapPin, Globe, HelpCircle, FileText, LogOut, ChevronRight, 
-  Home as HomeIcon, Package, ShoppingCart, ArrowLeft 
+  Home as HomeIcon, Package, ShoppingCart, ArrowLeft, Camera 
 } from 'lucide-react';
 import { lockApp } from '../mpinStorage';
+import { useCart } from '../CartContext';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { cartItems } = useCart(); // 👉 Real-time cart items count sathi
+
   const [userData, setUserData] = useState({
     name: 'शेतकरी मित्र',
     phone: '',
@@ -24,7 +27,6 @@ const Profile = () => {
         const user = JSON.parse(savedUser);
         const fullName = user.name || user.fullName || user.username || 'शेतकरी मित्र';
         
-        // नावाची आद्याक्षरे (उदा. Vishnu Waghmode -> VW)
         const nameParts = fullName.trim().split(' ');
         let initials = 'SM';
         if (nameParts.length >= 2) {
@@ -89,17 +91,14 @@ const Profile = () => {
             </div>
             
             <div className="flex flex-col items-center relative z-10">
-              {/* डायनॅमिक आद्याक्षरे (Initials) */}
               <div className="w-20 h-20 bg-white rounded-full p-1 shadow-lg mb-3">
                 <div className="w-full h-full bg-green-100 rounded-full flex items-center justify-center text-[#0c542b] font-black text-2xl">
                   {userData.initials}
                 </div>
               </div>
               
-              {/* डायनॅमिक नाव */}
               <h2 className="text-lg font-bold text-white">{userData.name}</h2>
               
-              {/* फोन नंबर किंवा ईमेल */}
               <p className="text-xs text-green-100 mt-1">
                 {userData.phone ? `+91 ${userData.phone}` : userData.email}
               </p>
@@ -151,53 +150,61 @@ const Profile = () => {
         </div>
       </IonContent>
 
-     {/* ४. प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार (Profile Page) */}
-<div 
-  className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
-  style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
->
-  {/* १. होम बटण */}
-  <div 
-    onClick={() => navigate('/home')} 
-    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <HomeIcon size={22} className="stroke-[2]" />
-    <span className="text-[10px] font-semibold mt-0.5">होम</span>
-  </div>
+      {/* 👉 ४. प्रीमियम बॉटम नेव्हिगेशन बार (कॅमेरा आयकॉनसह) */}
+      <div 
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
+      >
+        <div 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
+          <HomeIcon size={22} className="stroke-[2]" />
+          <span className="text-[10px] font-semibold mt-0.5">होम</span>
+        </div>
 
-  {/* २. ऑर्डर्स बटण */}
-  <div 
-    onClick={() => navigate('/orders')} 
-    className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <Package size={22} className="stroke-[2]" />
-    <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
-  </div>
+        <div 
+          onClick={() => navigate('/orders')} 
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
+          <Package size={22} className="stroke-[2]" />
+          <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
+        </div>
 
-  {/* ३. कार्ट बटण (बॅजसह) */}
-  <div 
-    onClick={() => navigate('/cart')} 
-    className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
-  >
-    <div className="relative">
-      <ShoppingCart size={22} className="stroke-[2]" />
-      <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
-        2
-      </span>
-    </div>
-    <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
-  </div>
+        {/* 👉 Professional Camera Button (बारच्या आत मध्यभागी) */}
+        <div 
+          onClick={() => navigate('/crop-advisory')} 
+          className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"
+        >
+          <div className="w-12 h-12 bg-gradient-to-tr from-[#0c542b] via-emerald-600 to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_rgba(12,84,43,0.35)] group-hover:scale-105 transition-transform">
+            <Camera size={24} className="stroke-[2.2]" />
+          </div>
+          <span className="text-[10px] font-bold text-[#0c542b] mt-0.5">डॉक्टर</span>
+        </div>
 
-  {/* ४. प्रोफाईल बटण (सध्या ॲक्टिव्ह - हलक्या हिरव्या बॅकग्राउंडसह) */}
-  <div 
-    onClick={() => navigate('/profile')} 
-    className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
-  >
-    <User size={22} className="stroke-[2.5]" />
-    <span className="text-[10px] font-black mt-0.5 tracking-wide">प्रोफाईल</span>
-  </div>
-</div>
+        <div 
+          onClick={() => navigate('/cart')} 
+          className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
+          <div className="relative">
+            <ShoppingCart size={22} className="stroke-[2]" />
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm">
+                {cartItems.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
+        </div>
 
+        <div 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl bg-[#0c542b]/10"
+        >
+          <User size={22} className="stroke-[2.5]" />
+          <span className="text-[10px] font-black mt-0.5 tracking-wide">प्रोफाईल</span>
+        </div>
+      </div>
     </IonPage>
   );
 };

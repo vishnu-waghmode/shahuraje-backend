@@ -1,7 +1,7 @@
 import React from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Plus, Minus, Home as HomeIcon, Package, ShoppingCart, User } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Minus, Home as HomeIcon, Package, ShoppingCart, User, Camera } from 'lucide-react';
 import { useCart } from '../CartContext'; 
 
 const Cart = () => {
@@ -12,7 +12,6 @@ const Cart = () => {
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal > 0 ? subtotal + deliveryFee : 0;
 
-  // 👉 नवीन चेकआउटकडे नेणारे फंक्शन (डायरेक्ट API कॉल काढला)
   const handleCheckoutClick = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     
@@ -26,7 +25,6 @@ const Cart = () => {
       return;
     }
 
-    // Checkout पेजवर जाताना total रक्कम सोबत पाठवणे
     navigate('/checkout', { state: { total: total } });
   };
 
@@ -125,13 +123,12 @@ const Cart = () => {
         </div>
       </IonContent>
 
-      {/* ४. चेकआउट बटण */}
+      {/* चेकआउट बटण */}
       {cartItems.length > 0 && (
         <div 
           className="fixed left-0 right-0 bg-white border-t border-gray-100 p-3.5 px-6 z-40 rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)]"
           style={{ bottom: 'calc(env(safe-area-inset-bottom) + 90px)' }}
         >
-          {/* 👉 इथे आता handleCheckoutClick वापरला आहे */}
           <button 
             onClick={handleCheckoutClick}
             className="w-full bg-[#0c542b] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:bg-[#083a1d] active:scale-95 transition-all flex items-center justify-center"
@@ -141,14 +138,14 @@ const Cart = () => {
         </div>
       )}
 
-      {/* ५. बॉटम नेव्हिगेशन बार */}
+      {/* 👉 बॉटम नेव्हिगेशन बार (कॅमेरा आयकॉनसह) */}
       <div 
-        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div 
           onClick={() => navigate('/home')} 
-          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <HomeIcon size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">होम</span>
@@ -156,15 +153,26 @@ const Cart = () => {
 
         <div 
           onClick={() => navigate('/orders')} 
-          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <Package size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
         </div>
 
+        {/* 👉 Professional Camera Button (बारच्या आत मध्यभागी) */}
+        <div 
+          onClick={() => navigate('/crop-advisory')} 
+          className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"
+        >
+          <div className="w-12 h-12 bg-gradient-to-tr from-[#0c542b] via-emerald-600 to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_rgba(12,84,43,0.35)] group-hover:scale-105 transition-transform">
+            <Camera size={24} className="stroke-[2.2]" />
+          </div>
+          <span className="text-[10px] font-bold text-[#0c542b] mt-0.5">डॉक्टर</span>
+        </div>
+
         <div 
           onClick={() => navigate('/cart')} 
-          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
+          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl bg-[#0c542b]/10"
         >
           <ShoppingCart size={22} className="stroke-[2.5]" />
           <span className="text-[10px] font-black mt-0.5 tracking-wide">कार्ट</span>
@@ -172,7 +180,7 @@ const Cart = () => {
 
         <div 
           onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <User size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>

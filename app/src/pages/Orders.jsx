@@ -11,7 +11,8 @@ import {
   Clock, 
   XCircle, 
   Loader2,
-  Navigation // 👉 ट्रॅक आयकॉन
+  Navigation, // ट्रॅक आयकॉन
+  Camera // 👉 पिकांचा डॉक्टर (कॅमेरा आयकॉन)
 } from 'lucide-react';
 
 const Orders = () => {
@@ -170,7 +171,7 @@ const Orders = () => {
                       <div className="font-black text-gray-800 text-sm">एकूण: ₹{order.totalAmount}</div>
                     </div>
 
-                    {/* 👉 नवीन: लाईव्ह ट्रॅकिंग बटण (फक्त रद्द नसलेल्या ऑर्डर्ससाठी) */}
+                    {/* 👉 लाईव्ह ट्रॅकिंग बटण (फक्त रद्द नसलेल्या ऑर्डर्ससाठी) */}
                     {order.status !== 'Cancelled' && (
                       <button
                         onClick={(e) => {
@@ -197,27 +198,52 @@ const Orders = () => {
         </div>
       </IonContent>
 
-      {/* प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार */}
+      {/* 👉 प्रीमियम फ्लोटिंग बॉटम नेव्हिगेशन बार (कॅमेरा आयकॉनसह) */}
       <div 
-        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
-        <div onClick={() => navigate('/home')} className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
+        <div 
+          onClick={() => navigate('/home')} 
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
           <HomeIcon size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">होम</span>
         </div>
 
-        <div onClick={() => navigate('/orders')} className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10">
+        <div 
+          onClick={() => navigate('/orders')} 
+          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl bg-[#0c542b]/10"
+        >
           <Package size={22} className="stroke-[2.5]" />
           <span className="text-[10px] font-black mt-0.5 tracking-wide">ऑर्डर्स</span>
         </div>
 
-        <div onClick={() => navigate('/cart')} className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
-          <ShoppingCart size={22} className="stroke-[2]" />
+        {/* 👉 Professional Camera Button (बारच्या आत मध्यभागी) */}
+        <div 
+          onClick={() => navigate('/crop-advisory')} 
+          className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"
+        >
+          <div className="w-12 h-12 bg-gradient-to-tr from-[#0c542b] via-emerald-600 to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_rgba(12,84,43,0.35)] group-hover:scale-105 transition-transform">
+            <Camera size={24} className="stroke-[2.2]" />
+          </div>
+          <span className="text-[10px] font-bold text-[#0c542b] mt-0.5">डॉक्टर</span>
+        </div>
+
+        <div 
+          onClick={() => navigate('/cart')} 
+          className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
+          <div className="relative">
+            <ShoppingCart size={22} className="stroke-[2]" />
+          </div>
           <span className="text-[10px] font-semibold mt-0.5">कार्ट</span>
         </div>
 
-        <div onClick={() => navigate('/profile')} className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50">
+        <div 
+          onClick={() => navigate('/profile')} 
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
+        >
           <User size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
         </div>

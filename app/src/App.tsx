@@ -106,8 +106,8 @@ const HardwareBackButtonHandler = () => {
         <div className="bg-white p-2 rounded-full mb-6 shadow-2xl flex items-center justify-center w-24 h-24">
           <img src="/shahuraje1.png" alt="logo" className="w-20 h-20 object-contain" />
         </div>
-        <h2 className="text-2xl font-black">Jai Baliraja! 🌾</h2>
-        <p className="text-sm font-medium text-green-200 mt-2">Sheti Aapli Sanskruti, Shetkari Aapla Abhiman!</p>
+        <h2 className="text-2xl font-black">जय बळीराजा! 🌾</h2>
+        <p className="text-sm font-medium text-green-200 mt-2">शेती आपली संस्कृती, शेतकरी आपला अभिमान!</p>
       </div>
     );
   }
