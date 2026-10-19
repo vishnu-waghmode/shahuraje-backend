@@ -171,8 +171,8 @@ const Orders = () => {
                       <div className="font-black text-gray-800 text-sm">एकूण: ₹{order.totalAmount}</div>
                     </div>
 
-                    {/* 👉 लाईव्ह ट्रॅकिंग बटण (फक्त रद्द नसलेल्या ऑर्डर्ससाठी) */}
-                    {order.status !== 'Cancelled' && (
+                    {/* 👉 लाईव्ह ट्रॅकिंग बटण (फक्त प्रलंबित किंवा प्रॉसेसिंग असणाऱ्या ऑर्डर्ससाठीच दिसेल, पोहोचलेल्या किंवा रद्द झालेल्यांसाठी नाही) */}
+                    {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

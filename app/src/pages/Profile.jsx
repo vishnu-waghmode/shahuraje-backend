@@ -3,14 +3,14 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, MapPin, Globe, HelpCircle, FileText, LogOut, ChevronRight, 
-  Home as HomeIcon, Package, ShoppingCart, ArrowLeft, Camera 
+  Home as HomeIcon, Package, ShoppingCart, ArrowLeft, Camera, X, Phone, Mail, Check 
 } from 'lucide-react';
 import { lockApp } from '../mpinStorage';
 import { useCart } from '../CartContext';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { cartItems } = useCart(); // 👉 Real-time cart items count sathi
+  const { cartItems } = useCart();
 
   const [userData, setUserData] = useState({
     name: 'शेतकरी मित्र',
@@ -18,6 +18,9 @@ const Profile = () => {
     email: '',
     initials: 'SM'
   });
+
+  // 👉 कोणते मॉडल (Popup) उघडे आहे ते ट्रॅक करण्यासाठी स्टेट
+  const [activeModal, setActiveModal] = useState(null); // 'info', 'address', 'language', 'help', 'terms'
 
   // localStorage मधून लॉगिन युझरची माहिती आणणे
   useEffect(() => {
@@ -37,8 +40,8 @@ const Profile = () => {
 
         setUserData({
           name: fullName,
-          phone: user.phone || user.mobile || '',
-          email: user.email || '',
+          phone: user.phone || user.mobile || '९८७६५४३२१०',
+          email: user.email || 'farmer@shahuraje.com',
           initials
         });
       }
@@ -47,16 +50,16 @@ const Profile = () => {
     }
   }, []);
 
-  // प्रोफाईल मेनू ऑप्शन्स
+  // प्रोफाईल मेनू ऑप्शन्स आणि त्यांचे मॉडल हँडलर
   const menuOptions = [
-    { id: 1, icon: <User size={20} />, title: 'माझी माहिती', subtitle: 'प्रोफाईल तपशील अपडेट करा' },
-    { id: 2, icon: <MapPin size={20} />, title: 'माझे पत्ते', subtitle: 'डिलिव्हरीचा पत्ता व्यवस्थापित करा' },
-    { id: 3, icon: <Globe size={20} />, title: 'भाषा (Language)', subtitle: 'मराठी (Marathi)' },
-    { id: 4, icon: <HelpCircle size={20} />, title: 'मदत आणि सपोर्ट', subtitle: 'आमच्याशी संपर्क साधा' },
-    { id: 5, icon: <FileText size={20} />, title: 'नियम आणि अटी', subtitle: 'ॲप वापरण्याच्या अटी' },
+    { id: 'info', icon: <User size={20} />, title: 'माझी माहिती', subtitle: 'प्रोफाईल तपशील पहा' },
+    { id: 'address', icon: <MapPin size={20} />, title: 'माझे पत्ते', subtitle: 'डिलिव्हरीचा पत्ता व्यवस्थापित करा' },
+    { id: 'language', icon: <Globe size={20} />, title: 'भाषा (Language)', subtitle: 'मराठी (Marathi)' },
+    { id: 'help', icon: <HelpCircle size={20} />, title: 'मदत आणि सपोर्ट', subtitle: 'आमच्याशी संपर्क साधा' },
+    { id: 'terms', icon: <FileText size={20} />, title: 'नियम आणि अटी', subtitle: 'ॲप वापरण्याच्या अटी' },
   ];
 
-  // लॉगआउट फंक्शन (ॲप लॉक करून MPIN स्क्रीनवर पाठवेल)
+  // लॉगआउट फंक्शन
   const handleLogout = () => {
     const confirmLogout = window.confirm("तुम्हाला नक्की लॉगआउट करायचे आहे का?");
     if (confirmLogout) {
@@ -115,7 +118,7 @@ const Profile = () => {
               {menuOptions.map((item, index) => (
                 <div 
                   key={item.id} 
-                  onClick={() => alert(`${item.title} पेज लवकरच उपलब्ध होईल!`)}
+                  onClick={() => setActiveModal(item.id)} // 👉 क्लिक केल्यावर संबंधित मॉडल उघडेल
                   className={`flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-all ${
                     index !== menuOptions.length - 1 ? 'border-b border-gray-100' : ''
                   }`}
@@ -150,9 +153,123 @@ const Profile = () => {
         </div>
       </IonContent>
 
-      {/* 👉 ४. प्रीमियम बॉटम नेव्हिगेशन बार (कॅमेरा आयकॉनसह) */}
+      {/* ================= 🟢 MODALS / POPUPS ================= */}
+      {activeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            
+            {/* मॉडल हेडर */}
+            <div className="bg-[#0c542b] text-white p-4 flex justify-between items-center">
+              <h3 className="font-bold text-base">
+                {activeModal === 'info' && 'माझी माहिती'}
+                {activeModal === 'address' && 'माझे पत्ते (Addresses)'}
+                {activeModal === 'language' && 'भाषा निवडा (Language)'}
+                {activeModal === 'help' && 'मदत आणि सपोर्ट'}
+                {activeModal === 'terms' && 'नियम आणि अटी'}
+              </h3>
+              <button onClick={() => setActiveModal(null)} className="p-1 rounded-full bg-white/10 hover:bg-white/20 transition">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* मॉडल बॉडी */}
+            <div className="p-5 overflow-y-auto space-y-4 text-gray-700 text-sm">
+              
+              {/* १. माझी माहिती */}
+              {activeModal === 'info' && (
+                <div className="space-y-3">
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span className="text-xs text-gray-400 block font-bold">पूर्ण नाव</span>
+                    <p className="font-bold text-gray-800 text-base">{userData.name}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span className="text-xs text-gray-400 block font-bold">मोबाईल नंबर</span>
+                    <p className="font-bold text-gray-800 text-base">+91 {userData.phone || 'उपलब्ध नाही'}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <span className="text-xs text-gray-400 block font-bold">खाते प्रकार</span>
+                    <p className="font-bold text-[#0c542b] text-sm">नोंदणीकृत शेतकरी सदस्य</p>
+                  </div>
+                </div>
+              )}
+
+              {/* २. माझे पत्ते */}
+              {activeModal === 'address' && (
+                <div className="space-y-3">
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-2xl relative">
+                    <span className="bg-[#0c542b] text-white text-[10px] font-bold px-2 py-0.5 rounded-md mb-2 inline-block">मुख्य पत्ता (Default)</span>
+                    <h4 className="font-bold text-gray-800">{userData.name}</h4>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">मु. पोस्ट तालुका, शाहूराजे शेती केंद्र परिसर, महाराष्ट्र - ४१३००१</p>
+                    <p className="text-xs font-bold text-gray-700 mt-2">मोबाईल: +91 {userData.phone}</p>
+                  </div>
+                  <button onClick={() => alert('नवीन पत्ता जोडण्याची सुविधा लवकरच येईल!')} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition">
+                    + नवीन पत्ता जोडा
+                  </button>
+                </div>
+              )}
+
+              {/* ३. भाषा */}
+              {activeModal === 'language' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3.5 bg-green-50 border border-green-200 rounded-2xl cursor-pointer">
+                    <span className="font-bold text-gray-800">मराठी (Marathi) - सद्यस्थिती</span>
+                    <Check size={18} className="text-[#0c542b]" />
+                  </div>
+                  <div className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-100 rounded-2xl cursor-pointer hover:bg-gray-100 opacity-60">
+                    <span className="font-medium text-gray-700">English (लवकरच येत आहे)</span>
+                  </div>
+                </div>
+              )}
+
+              {/* ४. मदत आणि सपोर्ट */}
+              {activeModal === 'help' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">तुम्हाला शेतीविषयक किंवा ऑर्डरबद्दल काही अडचण असल्यास खालील माध्यमातून संपर्क साधा:</p>
+                  <a href="tel:9876543210" className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition">
+                    <div className="p-2.5 bg-green-100 text-[#0c542b] rounded-full"><Phone size={18} /></div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 block font-bold">हेल्पलाईन नंबर</span>
+                      <span className="font-bold text-gray-800">+९१ ९८७६५ ४३२१०</span>
+                    </div>
+                  </a>
+                  <a href="mailto:support@shahuraje.com" className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition">
+                    <div className="p-2.5 bg-green-100 text-[#0c542b] rounded-full"><Mail size={18} /></div>
+                    <div>
+                      <span className="text-[10px] text-gray-400 block font-bold">ईमेल सपोर्ट</span>
+                      <span className="font-bold text-gray-800">support@shahuraje.com</span>
+                    </div>
+                  </a>
+                </div>
+              )}
+
+              {/* ५. नियम आणि अटी */}
+              {activeModal === 'terms' && (
+                <div className="space-y-2 text-xs text-gray-600 leading-relaxed">
+                  <p><b>१. सेवा वापर:</b> शाहूराजे कृषी केंद्र ॲप केवळ शेतकऱ्यांच्या सोयीसाठी आणि दर्जेदार खते, बियाणे पुरवण्यासाठी आहे.</p>
+                  <p><b>२. पिकांचा डॉक्टर:</b> पिकांच्या रोगाबाबत दिलेला सल्ला अनुभवावर आणि तज्ज्ञांच्या मार्गदर्शनावर आधारित आहे.</p>
+                  <p><b>३. गोपनीयता:</b> तुमची वैयक्तिक माहिती पूर्णपणे सुरक्षित ठेवण्यात येते.</p>
+                </div>
+              )}
+
+            </div>
+
+            {/* मॉडल फुटर */}
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="px-5 py-2 bg-[#0c542b] text-white font-bold text-xs rounded-xl hover:bg-[#094020] transition"
+              >
+                बंद करा
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ================= 🟢 बॉटम नेव्हिगेशन बार ================= */}
       <div 
-        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-5 flex justify-between items-center z-40 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div 
@@ -171,7 +288,7 @@ const Profile = () => {
           <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
         </div>
 
-        {/* 👉 Professional Camera Button (बारच्या आत मध्यभागी) */}
+        {/* Professional Camera Button */}
         <div 
           onClick={() => navigate('/crop-advisory')} 
           className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"
