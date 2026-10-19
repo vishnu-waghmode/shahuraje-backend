@@ -7,7 +7,7 @@ const cropAdvisorySchema = new mongoose.Schema({
     required: true
   },
   image: {
-    type: String, // इथे Cloudinary ची इमेज लिंक सेव्ह होईल
+    type: String,
     required: true
   },
   description: {
@@ -16,16 +16,16 @@ const cropAdvisorySchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Resolved'], // Pending = तपासणी सुरु, Resolved = सल्ला दिला
+    enum: ['Pending', 'Resolved'],
     default: 'Pending'
   },
-  suggestedProduct: {
+  // 👉 एकापेक्षा जास्त औषधे साठवण्यासाठी Array केला आहे
+  suggestedProducts: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product', // ॲडमिन जे औषध सुचवेल त्याचा ID
-    default: null
-  },
+    ref: 'Product'
+  }],
   adminMessage: {
-    type: String, // ॲडमिनने दिलेला काही विशेष सल्ला
+    type: String,
     default: ''
   }
 }, { timestamps: true });

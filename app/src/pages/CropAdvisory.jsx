@@ -5,26 +5,22 @@ import { ArrowLeft, Camera, Image as ImageIcon, Send, Clock, CheckCircle, AlertC
 
 const CropAdvisory = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('नवीन_तक्रार'); // Tabs: नवीन_तक्रार, जुने_सल्ले
-  const [selectedImage, setSelectedImage] = useState(null); // दाखवण्यासाठी
-  const [base64Image, setBase64Image] = useState(null); // Backend ला पाठवण्यासाठी
+  const [activeTab, setActiveTab] = useState('नवीन_तक्रार'); 
+  const [selectedImage, setSelectedImage] = useState(null); 
+  const [base64Image, setBase64Image] = useState(null); 
   const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false); // फॉर्म सबमिट होताना लोडिंगसाठी
-  const [pastQueries, setPastQueries] = useState([]); // डेटाबेसमधून येणारे जुने सल्ले
+  const [loading, setLoading] = useState(false); 
+  const [pastQueries, setPastQueries] = useState([]); 
   const [fetchingHistory, setFetchingHistory] = useState(false);
 
-  // 👉 सुरक्षितपणे युझर ID घेणे
   const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userId = savedUser?._id || savedUser?.id;
 
-  // १. फोटो निवडणे आणि Base64 मध्ये बदलणे
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // ॲपमध्ये दाखवण्यासाठी URL
       setSelectedImage(URL.createObjectURL(file));
 
-      // Backend ला पाठवण्यासाठी Base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = () => {
@@ -33,7 +29,6 @@ const CropAdvisory = () => {
     }
   };
 
-  // २. बॅकएंडला फोटो आणि माहिती पाठवणे
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedImage || !base64Image) {
@@ -65,7 +60,7 @@ const CropAdvisory = () => {
         setSelectedImage(null);
         setBase64Image(null);
         setDescription('');
-        setActiveTab('जुने_सल्ले'); // फोटो गेल्यावर ऑटोमॅटिक जुन्या सल्ल्यांवर जाणे
+        setActiveTab('जुने_सल्ले'); 
       } else {
         alert("फोटो पाठवताना अडचण आली: " + data.error);
       }
@@ -77,7 +72,6 @@ const CropAdvisory = () => {
     }
   };
 
-  // ३. डेटाबेसमधून जुने सल्ले (History) आणणे
   useEffect(() => {
     const fetchHistory = async () => {
       if (!userId || activeTab !== 'जुने_सल्ले') return;
@@ -98,7 +92,6 @@ const CropAdvisory = () => {
     fetchHistory();
   }, [activeTab, userId]);
 
-  // तारीख मराठीत फॉरमॅट करण्यासाठी
   const formatDate = (dateString) => {
     const options = { day: 'numeric', month: 'short', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('mr-IN', options);
@@ -109,7 +102,6 @@ const CropAdvisory = () => {
       <IonContent className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-20">
           
-          {/* Header */}
           <div className="bg-[#0c542b] text-white px-4 pt-8 pb-5 shadow-sm sticky top-0 z-20">
             <div className="flex items-center gap-3">
               <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all">
@@ -121,7 +113,6 @@ const CropAdvisory = () => {
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="flex mt-6 bg-white/10 p-1 rounded-xl">
               <button 
                 onClick={() => setActiveTab('नवीन_तक्रार')}
@@ -150,17 +141,14 @@ const CropAdvisory = () => {
                   रोगग्रस्त पानाचा किंवा पिकाचा स्पष्ट फोटो काढा म्हणजे आमचे तज्ज्ञ अचूक औषध सुचवू शकतील.
                 </p>
 
-                {/* 👉 Image Upload Section */}
                 {!selectedImage ? (
                   <div className="grid grid-cols-2 gap-3 mt-2">
-                    {/* Live Camera */}
                     <label className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-emerald-300 rounded-2xl bg-emerald-50 hover:bg-emerald-100 active:scale-95 transition-all cursor-pointer">
                       <Camera size={32} className="text-emerald-600 mb-2" />
                       <span className="text-[11px] font-bold text-emerald-800 text-center leading-tight">थेट कॅमेऱ्यातून<br/>फोटो काढा</span>
                       <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
                     </label>
 
-                    {/* Gallery */}
                     <label className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-blue-300 rounded-2xl bg-blue-50 hover:bg-blue-100 active:scale-95 transition-all cursor-pointer">
                       <ImageIcon size={32} className="text-blue-600 mb-2" />
                       <span className="text-[11px] font-bold text-blue-800 text-center leading-tight">गॅलरीमधून<br/>फोटो निवडा</span>
@@ -168,7 +156,6 @@ const CropAdvisory = () => {
                     </label>
                   </div>
                 ) : (
-                  // फोटो निवडल्यानंतरचे दृश्य
                   <div className="relative w-full h-56 rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
                     <img src={selectedImage} alt="Crop" className="w-full h-full object-cover" />
                     <button 
@@ -183,7 +170,6 @@ const CropAdvisory = () => {
                   </div>
                 )}
 
-                {/* Description */}
                 <div className="mt-5">
                   <label className="block text-xs font-bold text-gray-700 mb-2">पिकाची समस्या (ऐच्छिक / Optional)</label>
                   <textarea 
@@ -195,7 +181,6 @@ const CropAdvisory = () => {
                   ></textarea>
                 </div>
 
-                {/* 👉 Submit Button with Loader */}
                 <button 
                   onClick={handleSubmit}
                   disabled={loading || !selectedImage}
@@ -209,7 +194,6 @@ const CropAdvisory = () => {
                 </button>
               </div>
             ) : (
-              // 👉 जुने सल्ले टॅब (History)
               <div className="space-y-4">
                 {fetchingHistory ? (
                   <div className="flex flex-col items-center justify-center py-10 text-[#0c542b]">
@@ -236,7 +220,6 @@ const CropAdvisory = () => {
                         )}
                       </div>
 
-                      {/* फोटो आणि समस्या */}
                       <div className="flex gap-3 mb-4">
                         <img src={query.image} alt="Crop" className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm" />
                         <p className="text-xs text-gray-700 font-medium leading-relaxed flex-1">
@@ -244,26 +227,32 @@ const CropAdvisory = () => {
                         </p>
                       </div>
 
-                      {query.status === 'Resolved' && query.suggestedProduct && (
+                      {query.status === 'Resolved' && query.suggestedProducts && query.suggestedProducts.length > 0 && (
                         <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100 mt-2">
-                          <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-2">तज्ज्ञांनी सुचवलेले औषध:</div>
-                          <h3 className="font-black text-sm text-[#0c542b]">{query.suggestedProduct.name}</h3>
+                          <div className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider mb-2">तज्ज्ञांनी सुचवलेली औषधे:</div>
                           
+                          <div className="space-y-2 mb-3">
+                            {query.suggestedProducts.map((prod, idx) => (
+                              <div key={idx} className="bg-white p-2.5 rounded-lg border border-emerald-100 flex justify-between items-center shadow-xs">
+                                <div>
+                                  <h3 className="font-bold text-xs text-[#0c542b]">{prod.name}</h3>
+                                  <span className="text-[11px] font-extrabold text-gray-800">₹{prod.price}</span>
+                                </div>
+                                <button 
+                                  onClick={() => navigate('/product-detail', { state: { product: prod } })}
+                                  className="bg-[#0c542b] text-white text-[10px] font-bold px-3 py-1.5 rounded-md active:scale-95 transition-all"
+                                >
+                                  तपासा
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
                           {query.adminMessage && (
-                            <p className="text-[10px] text-gray-600 mt-1 mb-2 font-medium bg-white/60 p-2 rounded-lg border border-emerald-100/50">
+                            <p className="text-[10px] text-gray-600 mt-1 font-medium bg-white/60 p-2 rounded-lg border border-emerald-100/50">
                               <span className="font-bold text-emerald-700">सल्ला:</span> {query.adminMessage}
                             </p>
                           )}
-
-                          <div className="flex justify-between items-center mt-3">
-                            <span className="text-xs font-bold text-gray-800">₹{query.suggestedProduct.price}</span>
-                            <button 
-                              onClick={() => navigate('/product-detail', { state: { product: query.suggestedProduct } })}
-                              className="bg-[#0c542b] text-white text-[10px] font-bold px-4 py-2 rounded-lg active:scale-95 transition-all shadow-sm"
-                            >
-                              खरेदी करा
-                            </button>
-                          </div>
                         </div>
                       )}
 

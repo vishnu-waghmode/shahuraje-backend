@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf, Truck } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, Archive, BarChart2, Settings, LogOut, Leaf, Truck, Stethoscope } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation(); // सध्या कोणते पेज चालू आहे हे ओळखण्यासाठी
@@ -10,6 +10,7 @@ const Sidebar = () => {
     { name: 'Products', path: '/products', icon: <Package size={20} /> },
     { name: 'Customers', path: '/customers', icon: <Users size={20} /> },
     { name: 'Delivery Boys', path: '/delivery-boys', icon: <Truck size={20} /> },
+    { name: 'Crop Advisory', path: '/crop-advisory', icon: <Stethoscope size={20} /> },
     { name: 'Inventory', path: '/inventory', icon: <Archive size={20} /> },
     { name: 'Reports', path: '/reports', icon: <BarChart2 size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
@@ -40,7 +41,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* नेव्हिगेशन लिंक्स (येथे hide-scrollbar क्लास लावला आहे) */}
+      {/* नेव्हिगेशन लिंक्स */}
       <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto hide-scrollbar">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;

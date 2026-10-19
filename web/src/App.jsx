@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings'; 
 import Login from './pages/Login';
 import DeliveryBoys from './pages/DeliveryBoys';
+import AdminCropAdvisory from './pages/AdminCropAdvisory'; // 👉 १. पिकांचा डॉक्टर इंपोर्ट केला
 
 // 30 minute timeout check karne
 const ProtectedRoute = ({ children }) => {
@@ -61,6 +62,9 @@ function App() {
         
         {/* 👉 DeliveryBoys route la AdminLayout aani ProtectedRoute madhye wrap kele aahe */}
         <Route path="/delivery-boys" element={<ProtectedRoute><AdminLayout><DeliveryBoys /></AdminLayout></ProtectedRoute>} />
+        
+        {/* 👉 २. पिकांचा डॉक्टर राऊट ॲड केला */}
+        <Route path="/crop-advisory" element={<ProtectedRoute><AdminLayout><AdminCropAdvisory /></AdminLayout></ProtectedRoute>} />
       </Routes>
     </Router>
   );
