@@ -36,6 +36,7 @@ import WeatherDetail from './pages/WeatherDetail';
 import DeliveryDashboard from './pages/DeliveryDashboard';
 import TrackDelivery from './pages/TrackDelivery';
 import Notifications from './pages/Notifications';
+import CropAdvisory from './pages/CropAdvisory'; // 👉 पिकांचा डॉक्टर इंपोर्ट केला
 
 import { CartProvider } from './CartContext';
 import { 
@@ -290,6 +291,7 @@ const App = () => {
               <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
               <Route path="/track-order/:orderId" element={<TrackDelivery />} />
               <Route path="/notifications" element={<Notifications />} />
+              <Route path="/crop-advisory" element={<CropAdvisory />} /> {/* 👉 इथे राऊट ॲड केला */}
             </Routes>
           </IonRouterOutlet>
         </IonReactRouter>

@@ -3,7 +3,7 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, ShoppingCart, Home as HomeIcon, User, Package, Plus, 
-  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain, Bell 
+  CloudSun, Wind, Droplets, MapPin, CheckCircle2, AlertTriangle, CloudRain, Bell, Camera 
 } from 'lucide-react';
 import { useCart } from '../CartContext';
 
@@ -11,10 +11,9 @@ const Home = () => {
   const navigate = useNavigate();
   const { cartItems, addToCart } = useCart();
 
-  // 👉 १. सुरक्षितपणे युझरची माहिती आणि ID घेणे
   const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userName = savedUser?.name || 'शेतकरी मित्र';
-  const userId = savedUser?._id || savedUser?.id; // 👈 इथे सुरक्षित ID घेतला आहे
+  const userId = savedUser?._id || savedUser?.id; 
   
   const userInitials = userName
     .split(' ')
@@ -26,15 +25,11 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // 🔴 नोटिफिकेशन्सचा लाईव्ह आकडा दाखवण्यासाठी नवीन State
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // लाईव्ह हवामानासाठी स्टेट्स
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
 
-  // कॅरोसेलसाठी ३ बॅनर
   const banners = [
     {
       badge: 'विशेष सवलत',
@@ -68,7 +63,6 @@ const Home = () => {
     return () => clearInterval(slideInterval);
   }, [banners.length]);
 
-  // प्रॉडक्ट्स आणणे
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -84,11 +78,10 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  // 🔴 न वाचलेले नोटिफिकेशन्स आणणे (दर २० सेकंदांनी)
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        if (!userId) return; // जर userId नसेल तर API कॉल करू नका
+        if (!userId) return; 
         const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/notifications/${userId}`);
         const data = await response.json();
         if (response.ok && data.success) {
@@ -104,7 +97,6 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [userId]);
 
-  // थेट GPS लोकेशनवरून लाईव्ह हवामान
   useEffect(() => {
     const fetchLiveWeather = async (lat, lon) => {
       try {
@@ -123,7 +115,7 @@ const Home = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => fetchLiveWeather(pos.coords.latitude, pos.coords.longitude),
-        () => fetchLiveWeather(17.6599, 75.9064) // सोलापूर डिफॉल्ट
+        () => fetchLiveWeather(17.6599, 75.9064) 
       );
     } else {
       fetchLiveWeather(17.6599, 75.9064);
@@ -138,7 +130,6 @@ const Home = () => {
     return matchName || matchCategory;
   });
 
-  // १. लाईव्ह हवामानानुसार स्थिती ठरवणे
   const isRaining = Boolean(
     weather && (
       weather.precipitation > 0 || 
@@ -149,7 +140,6 @@ const Home = () => {
 
   const isWindy = !isRaining && Boolean(weather && weather.wind_speed_10m >= 26);
 
-  // २. हवामानानुसार डायनॅमिक इमेज, बॅज आणि मजकूर
   let weatherTheme = {
     bgImage: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
     statusBadge: '☀️ स्वच्छ हवामान',
@@ -209,8 +199,6 @@ const Home = () => {
             </div>
 
             <div className="flex items-center space-x-3">
-              
-              {/* 🔴 Bell Icon */}
               <div 
                 onClick={() => navigate('/notifications')} 
                 className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
@@ -223,7 +211,6 @@ const Home = () => {
                 )}
               </div>
 
-              {/* Cart Icon */}
               <div 
                 onClick={() => navigate('/cart')} 
                 className="relative bg-gray-100 p-2 rounded-full cursor-pointer hover:bg-gray-200"
@@ -236,7 +223,6 @@ const Home = () => {
                 )}
               </div>
               
-              {/* Profile Icon */}
               <div 
                 onClick={() => navigate('/profile')} 
                 className="w-9 h-9 bg-[#0c542b] text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md cursor-pointer"
@@ -275,7 +261,7 @@ const Home = () => {
               )}
             </div>
 
-            {/* ३. बॅनर कॅरोसेल */}
+            {/* ३. बॅनर कॅरोसेल (Premium Banner काढला आहे) */}
             <div className="relative overflow-hidden rounded-3xl shadow-lg h-44">
               <div 
                 className="flex h-full transition-transform duration-700 ease-out"
@@ -562,14 +548,14 @@ const Home = () => {
         </div>
       </IonContent>
 
-      {/* ७. बॉटम नेव्हिगेशन बार */}
+      {/* ७. बॉटम नेव्हिगेशन बार (Floating Action Button सह) */}
       <div 
-        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2.5 px-6 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
+        className="fixed left-4 right-4 bg-white/95 backdrop-blur-xl border border-gray-100/80 py-2 px-5 flex justify-between items-center z-50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] rounded-3xl select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div 
           onClick={() => navigate('/home')} 
-          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl bg-[#0c542b]/10"
+          className="flex flex-col items-center justify-center text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl bg-[#0c542b]/10"
         >
           <HomeIcon size={22} className="stroke-[2.5]" />
           <span className="text-[10px] font-black mt-0.5 tracking-wide">होम</span>
@@ -577,15 +563,25 @@ const Home = () => {
 
         <div 
           onClick={() => navigate('/orders')} 
-          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <Package size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">ऑर्डर्स</span>
         </div>
 
+        {/* 👉 Floating Camera Button (मधला बटण) */}
+        <div className="relative -top-6">
+          <div 
+            onClick={() => navigate('/crop-advisory')} 
+            className="w-14 h-14 bg-gradient-to-br from-[#0c542b] to-lime-500 rounded-full flex items-center justify-center text-white shadow-[0_8px_20px_rgba(12,84,43,0.4)] border-[4px] border-white cursor-pointer active:scale-95 transition-transform"
+          >
+            <Camera size={24} className="stroke-[2.5]" />
+          </div>
+        </div>
+
         <div 
           onClick={() => navigate('/cart')} 
-          className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="relative flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <div className="relative">
             <ShoppingCart size={22} className="stroke-[2]" />
@@ -600,7 +596,7 @@ const Home = () => {
 
         <div 
           onClick={() => navigate('/profile')} 
-          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-3 py-1 rounded-2xl hover:bg-gray-50"
+          className="flex flex-col items-center justify-center text-gray-400 hover:text-[#0c542b] cursor-pointer transition-all duration-150 active:scale-90 px-2 py-1 rounded-2xl hover:bg-gray-50"
         >
           <User size={22} className="stroke-[2]" />
           <span className="text-[10px] font-semibold mt-0.5">प्रोफाईल</span>
