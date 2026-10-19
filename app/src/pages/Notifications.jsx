@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react'; // 👈 हे नव्याने आयात केले आहे
+import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell, Package, Check, Clock } from 'lucide-react';
 
@@ -10,7 +10,6 @@ const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // सुरक्षितपणे लोकल स्टोरेजमधून युझरचा ID घेणे
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const userId = user?._id || user?.id; 
 
@@ -59,11 +58,10 @@ const Notifications = () => {
   };
 
   return (
-    <IonPage> {/* 👈 पेजला IonPage मध्ये टाकले */}
-      <IonContent className="bg-gray-50"> {/* 👈 स्क्रोलिंगसाठी IonContent वापरले */}
+    <IonPage>
+      <IonContent className="bg-gray-50">
         <div className="w-full min-h-full pb-20">
           
-          {/* 🔴 मोबाईलसाठी खास हेडर */}
           <div 
             className="bg-[#0c542b] text-white px-4 py-4 sticky top-0 z-20 flex items-center shadow-md"
             style={{ paddingTop: 'calc(env(safe-area-inset-top) + 16px)' }}
@@ -74,7 +72,6 @@ const Notifications = () => {
             <h1 className="text-lg font-bold">नोटिफिकेशन्स</h1>
           </div>
 
-          {/* 🟢 नोटिफिकेशन्सची यादी */}
           <div className="p-4 space-y-3">
             {loading ? (
               <div className="text-center py-10 text-gray-500">लोड होत आहे...</div>
@@ -82,12 +79,16 @@ const Notifications = () => {
               notifications.map((notif) => (
                 <div 
                   key={notif._id} 
-                  className={`p-4 rounded-xl shadow-sm flex gap-3 items-start border-l-4 ${
+                  onClick={() => {
+                    handleMarkAsRead(notif._id);
+                    navigate('/crop-advisory');
+                  }}
+                  className={`p-4 rounded-xl shadow-sm flex gap-3 items-start border-l-4 cursor-pointer transition ${
                     notif.isRead ? 'bg-white border-transparent' : 'bg-green-50 border-[#0c542b]'
                   }`}
                 >
                   <div className={`p-2 rounded-full mt-1 ${notif.isRead ? 'bg-gray-100 text-gray-400' : 'bg-[#0c542b]/10 text-[#0c542b]'}`}>
-                    <Package size={20} />
+                    <Bell size={20} />
                   </div>
                   
                   <div className="flex-1">
@@ -105,7 +106,10 @@ const Notifications = () => {
 
                   {!notif.isRead && (
                     <button 
-                      onClick={() => handleMarkAsRead(notif._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsRead(notif._id);
+                      }}
                       className="p-2 text-green-600 hover:bg-green-100 rounded-full transition"
                     >
                       <Check size={18} />
@@ -119,7 +123,7 @@ const Notifications = () => {
                   <Bell size={30} className="text-gray-400" />
                 </div>
                 <h3 className="text-gray-800 font-bold">कोणतेही नोटिफिकेशन नाही</h3>
-                <p className="text-xs text-gray-500 mt-1">तुमच्या ऑर्डर्सचे अपडेट्स इथे दिसतील.</p>
+                <p className="text-xs text-gray-500 mt-1">तज्ज्ञांच्या सल्ल्याचे अपडेट्स इथे दिसतील.</p>
               </div>
             )}
           </div>

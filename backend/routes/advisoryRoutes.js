@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
+const Notification = require('../models/Notification'); // 👉 ही ओळ नक्की ॲड करा
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -9,7 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// १. shetkaryane navin photo/takrar pathavne
+// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे
 router.post('/create', async (req, res) => {
   try {
     const { userId, description, imageBase64 } = req.body;
@@ -36,11 +37,11 @@ router.post('/create', async (req, res) => {
   }
 });
 
-// २. shetkaryane svatahchya junya takrari baghne
+// २. शेतकऱ्याने स्वतःच्या जुन्या तक्रारी बघणे
 router.get('/user/:userId', async (req, res) => {
   try {
     const history = await CropAdvisory.find({ userId: req.params.userId })
-        .populate('suggestedProducts') // 👉 Multi-select products populate kele
+        .populate('suggestedProducts')
         .sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: history });
   } catch (error) {
@@ -48,12 +49,12 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// ३. Admin ne sarva takrari baghne
+// ३. ॲडमिनने सर्व तक्रारी बघणे
 router.get('/admin/all', async (req, res) => {
   try {
     const allQueries = await CropAdvisory.find()
         .populate('userId', 'name phone')
-        .populate('suggestedProducts') // 👉 Multi-select products populate kele
+        .populate('suggestedProducts')
         .sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: allQueries });
   } catch (error) {
@@ -61,17 +62,36 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// ४. Admin ne ekapeksha jast aushdhe suchavne (Multi-select Resolve)
+// ४. ॲडमिनने औषध सुचवणे (Multi-select Resolve) व शेतकऱ्याला नोटिफिकेशन पाठवणे
 router.put('/admin/resolve/:id', async (req, res) => {
   try {
     const { suggestedProducts, adminMessage } = req.body;
+    
     const updated = await CropAdvisory.findByIdAndUpdate(
         req.params.id,
         { status: 'Resolved', suggestedProducts, adminMessage },
         { new: true }
     );
-    res.status(200).json({ success: true, message: "Aushdhe suchavli!", data: updated });
+
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
+    }
+
+    // 👉 हा अत्यंत महत्त्वाचा भाग: शेतकऱ्यासाठी नोटिफिकेशन डेटाबेसमध्ये तयार करणे
+    try {
+      await Notification.create({
+        userId: updated.userId,
+        title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
+        message: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.',
+        isRead: false
+      });
+    } catch (notifErr) {
+      console.error("Notification creation error:", notifErr);
+    }
+
+    res.status(200).json({ success: true, message: "औषध सुचवले आणि नोटिफिकेशन पाठवली!", data: updated });
   } catch (error) {
+    console.error("Resolve Error:", error);
     res.status(500).json({ success: false, error: "Server Error" });
   }
 });
