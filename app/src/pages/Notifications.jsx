@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, Package, Check, Clock } from 'lucide-react';
+import { ArrowLeft, Bell, Package, Clock, Stethoscope } from 'lucide-react';
 
 const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
 
@@ -15,19 +15,31 @@ const Notifications = () => {
 
   useEffect(() => {
     if (userId) {
-      fetchNotifications();
+      fetchAndMarkAllAsRead();
     } else {
       setLoading(false);
     }
   }, [userId]);
 
-  const fetchNotifications = async () => {
+  // 👉 पेज उघडताच नोटिफिकेशन्स आणणे आणि लगेचच सर्व 'Read' (वाचले) म्हणून मार्क करणे
+  const fetchAndMarkAllAsRead = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/notifications/${userId}`);
       const data = await response.json();
+      
       if (response.ok && data.success) {
-        setNotifications(data.notifications || []);
+        const list = data.notifications || [];
+        setNotifications(list);
+
+        // 👉 पेज ओपन होताच, ज्या unread ahet tyana background madhe mark-read karayche
+        list.forEach(async (notif) => {
+          if (!notif.isRead) {
+            await fetch(`${API_BASE_URL}/api/notifications/mark-read/${notif._id}`, {
+              method: 'PUT'
+            });
+          }
+        });
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -36,18 +48,17 @@ const Notifications = () => {
     }
   };
 
-  const handleMarkAsRead = async (notifId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/notifications/mark-read/${notifId}`, {
-        method: 'PUT'
-      });
-      if (response.ok) {
-        setNotifications(notifications.map(n => 
-          n._id === notifId ? { ...n, isRead: true } : n
-        ));
-      }
-    } catch (error) {
-      console.error("Error marking as read:", error);
+  // नोटिफिकेशनवर क्लिक केल्यावर योग्य पेजवर जाणे
+  const handleNotificationClick = (notif) => {
+    const titleText = (notif.title || '').toLowerCase();
+    const messageText = (notif.message || '').toLowerCase();
+
+    if (titleText.includes('डॉक्टर') || messageText.includes('पिक') || messageText.includes('औषध')) {
+      navigate('/crop-advisory');
+    } else if (titleText.includes('ऑर्डर') || messageText.includes('ऑर्डर') || messageText.includes('डिलिव्हरी')) {
+      navigate('/orders');
+    } else {
+      navigate('/home');
     }
   };
 
@@ -79,20 +90,15 @@ const Notifications = () => {
               notifications.map((notif) => (
                 <div 
                   key={notif._id} 
-                  onClick={() => {
-                    handleMarkAsRead(notif._id);
-                    navigate('/crop-advisory');
-                  }}
-                  className={`p-4 rounded-xl shadow-sm flex gap-3 items-start border-l-4 cursor-pointer transition ${
-                    notif.isRead ? 'bg-white border-transparent' : 'bg-green-50 border-[#0c542b]'
-                  }`}
+                  onClick={() => handleNotificationClick(notif)}
+                  className="p-4 rounded-xl shadow-sm bg-white border border-gray-100 flex gap-3 items-start cursor-pointer hover:bg-green-50/30 transition"
                 >
-                  <div className={`p-2 rounded-full mt-1 ${notif.isRead ? 'bg-gray-100 text-gray-400' : 'bg-[#0c542b]/10 text-[#0c542b]'}`}>
-                    <Bell size={20} />
+                  <div className="p-2 rounded-full mt-1 bg-[#0c542b]/10 text-[#0c542b]">
+                    {notif.title?.includes('डॉक्टर') ? <Stethoscope size={20} /> : <Package size={20} />}
                   </div>
                   
                   <div className="flex-1">
-                    <h3 className={`text-sm ${notif.isRead ? 'font-medium text-gray-700' : 'font-bold text-gray-900'}`}>
+                    <h3 className="text-sm font-bold text-gray-900">
                       {notif.title}
                     </h3>
                     <p className="text-xs text-gray-600 mt-1 leading-relaxed">
@@ -103,18 +109,6 @@ const Notifications = () => {
                       <span>{formatTime(notif.createdAt)}</span>
                     </div>
                   </div>
-
-                  {!notif.isRead && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMarkAsRead(notif._id);
-                      }}
-                      className="p-2 text-green-600 hover:bg-green-100 rounded-full transition"
-                    >
-                      <Check size={18} />
-                    </button>
-                  )}
                 </div>
               ))
             ) : (
@@ -123,7 +117,7 @@ const Notifications = () => {
                   <Bell size={30} className="text-gray-400" />
                 </div>
                 <h3 className="text-gray-800 font-bold">कोणतेही नोटिफिकेशन नाही</h3>
-                <p className="text-xs text-gray-500 mt-1">तज्ज्ञांच्या सल्ल्याचे अपडेट्स इथे दिसतील.</p>
+                <p className="text-xs text-gray-500 mt-1">तज्ज्ञांचे सल्ला आणि ऑर्डर्सचे अपडेट्स इथे दिसतील.</p>
               </div>
             )}
           </div>
