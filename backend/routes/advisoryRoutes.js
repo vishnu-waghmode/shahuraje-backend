@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
-const Notification = require('../models/Notification'); // 👉 ही ओळ नक्की ॲड करा
+const Notification = require('../models/Notification'); // 👉 नोटिफिकेशन मॉडेल
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -10,7 +10,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे
+// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे (आणि ॲडमिनला नोटिफिकेशन पाठवणे)
 router.post('/create', async (req, res) => {
   try {
     const { userId, description, imageBase64 } = req.body;
@@ -30,6 +30,19 @@ router.post('/create', async (req, res) => {
     });
 
     await newAdvisory.save();
+
+    // 👉 अत्यंत महत्त्वाचे: शेतकरी फोटो पाठवताच ॲडमिनसाठी (userId: null) नोटिफिकेशन तयार करणे
+    try {
+      await Notification.create({
+        userId: null, // null म्हणजे ॲडमिनसाठी नोटिफिकेशन
+        title: 'नवीन पिकाची तक्रार आली आहे! 🌾',
+        message: 'एका शेतकऱ्याने पिकाच्या समस्येचा फोटो पाठवला आहे. कृपया तपासा.',
+        isRead: false
+      });
+    } catch (notifErr) {
+      console.error("Admin Notification creation error:", notifErr);
+    }
+
     res.status(201).json({ success: true, message: "Takrar pathavali", data: newAdvisory });
   } catch (error) {
     console.error("Crop Advisory Error:", error);
@@ -77,7 +90,7 @@ router.put('/admin/resolve/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
     }
 
-    // 👉 हा अत्यंत महत्त्वाचा भाग: शेतकऱ्यासाठी नोटिफिकेशन डेटाबेसमध्ये तयार करणे
+    // 👉 शेतकऱ्यासाठी नोटिफिकेशन तयार करणे
     try {
       await Notification.create({
         userId: updated.userId,
