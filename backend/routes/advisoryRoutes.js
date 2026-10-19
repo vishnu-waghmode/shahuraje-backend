@@ -3,6 +3,13 @@ const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
 const cloudinary = require('cloudinary').v2;
 
+// 👉 Cloudinary Configuration (हे खूप महत्त्वाचे होते)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 // १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे
 router.post('/create', async (req, res) => {
   try {
