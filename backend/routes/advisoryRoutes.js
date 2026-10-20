@@ -104,13 +104,22 @@ router.put('/admin/resolve/:id', async (req, res) => {
       const farmer = await User.findById(updated.userId);
       if (farmer && farmer.fcmToken) {
           
-          // 👇 तू दिलेला साधा कोड इथे ॲड केला आहे 👇
+          // 👇 हा नवीन Bulletproof चॅनेल आयडी असलेला कोड 👇
           const message = {
+              token: farmer.fcmToken,
               notification: {
                   title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
                   body: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
               },
-              token: farmer.fcmToken
+              android: {
+                  priority: 'high',
+                  notification: {
+                      channelId: 'shahuraje_orders', // 👈 Android ला स्टेटस बारमध्ये मेसेज दाखवण्यासाठी हे आवश्यक आहे
+                      sound: 'default',
+                      defaultSound: true,
+                      defaultVibrateTimings: true
+                  }
+              }
           };
           // 👆 इथपर्यंत 👆
 
