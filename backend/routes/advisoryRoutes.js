@@ -3,7 +3,8 @@ const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
 const Notification = require('../models/Notification'); 
 const User = require('../models/User'); 
-const admin = require('firebase-admin'); 
+// 🔴 जुन्या 'const admin = require("firebase-admin")' ऐवजी नवीन getMessaging वापरा
+const { getMessaging } = require('firebase-admin/messaging'); 
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -109,39 +110,33 @@ router.put('/admin/resolve/:id', async (req, res) => {
       console.log("🔍 शेतकरी शोधत आहे User ID:", updated.userId);
       const farmer = await User.findById(updated.userId);
 
-      if (farmer) {
-        console.log("👤 शेतकरी सापडला:", farmer.name);
-        console.log("🔑 शेतकऱ्याचा FCM टोकन:", farmer.fcmToken ? farmer.fcmToken.substring(0, 20) + "..." : "नाही");
-
-        if (farmer.fcmToken) {
-          const message = {
-            token: farmer.fcmToken,
+      if (farmer && farmer.fcmToken) {
+        const message = {
+          token: farmer.fcmToken,
+          notification: {
+            title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
+            body: adminMessage || 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
+          },
+          android: {
+            priority: 'high',
             notification: {
-              title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
-              body: adminMessage || 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
-            },
-            android: {
-              priority: 'high',
-              notification: {
-                channelId: 'shahuraje_orders',
-                sound: 'default',
-                defaultSound: true,
-                defaultVibrateTimings: true,
-                priority: 'high'
-              }
-            },
-            headers: {
-              Urgency: 'high'
+              channelId: 'shahuraje_orders',
+              sound: 'default',
+              defaultSound: true,
+              defaultVibrateTimings: true,
+              priority: 'high'
             }
-          };
+          },
+          headers: {
+            Urgency: 'high'
+          }
+        };
 
-          const response = await admin.messaging().send(message);
-          console.log('🚀 Firebase कडून रिस्पॉन्स (सक्सेस):', response);
-        } else {
-          console.warn('⚠️ या शेतकऱ्याच्या अकाउंटवर fcmToken सेव्ह केलेला नाही!');
-        }
+        // 🔴 admin.messaging().send ऐवजी getMessaging().send वापरा
+        const response = await getMessaging().send(message);
+        console.log('🚀 Firebase Push यशस्वीरीत्या पाठवले! Response:', response);
       } else {
-        console.warn('⚠️ डेटाबेसमध्ये या ID चा युझर सापडला नाही:', updated.userId);
+        console.warn('⚠️ या शेतकऱ्याच्या अकाउंटवर fcmToken सेव्ह केलेला नाही!');
       }
     } catch (pushErr) {
       console.error('❌ Firebase Messaging Send मध्ये एरर आला:', pushErr);
