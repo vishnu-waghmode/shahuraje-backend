@@ -3,7 +3,6 @@ const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
 const Notification = require('../models/Notification'); 
 const User = require('../models/User'); 
-// 🔴 जुन्या 'const admin = require("firebase-admin")' ऐवजी नवीन getMessaging वापरा
 const { getMessaging } = require('firebase-admin/messaging'); 
 const cloudinary = require('cloudinary').v2;
 
@@ -111,6 +110,7 @@ router.put('/admin/resolve/:id', async (req, res) => {
       const farmer = await User.findById(updated.userId);
 
       if (farmer && farmer.fcmToken) {
+        // 🔴 पूर्णपणे अचूक आणि व्हॅलिड Payload (Unknown headers काढून टाकले आहे)
         const message = {
           token: farmer.fcmToken,
           notification: {
@@ -126,13 +126,9 @@ router.put('/admin/resolve/:id', async (req, res) => {
               defaultVibrateTimings: true,
               priority: 'high'
             }
-          },
-          headers: {
-            Urgency: 'high'
           }
         };
 
-        // 🔴 admin.messaging().send ऐवजी getMessaging().send वापरा
         const response = await getMessaging().send(message);
         console.log('🚀 Firebase Push यशस्वीरीत्या पाठवले! Response:', response);
       } else {
