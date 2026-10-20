@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
-const Notification = require('../models/Notification'); // 👉 नोटिफिकेशन मॉडेल
+const Notification = require('../models/Notification'); 
+const User = require('../models/User'); // 👉 User Model
+const admin = require('firebase-admin'); // 👉 Firebase Admin
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -10,7 +12,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे (आणि ॲडमिनला नोटिफिकेशन पाठवणे)
+// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे
 router.post('/create', async (req, res) => {
   try {
     const { userId, description, imageBase64 } = req.body;
@@ -31,10 +33,10 @@ router.post('/create', async (req, res) => {
 
     await newAdvisory.save();
 
-    // 👉 अत्यंत महत्त्वाचे: शेतकरी फोटो पाठवताच ॲडमिनसाठी (userId: null) नोटिफिकेशन तयार करणे
+    // ॲडमिनसाठी (userId: null) नोटिफिकेशन तयार करणे
     try {
       await Notification.create({
-        userId: null, // null म्हणजे ॲडमिनसाठी नोटिफिकेशन
+        userId: null, 
         title: 'नवीन पिकाची तक्रार आली आहे! 🌾',
         message: 'एका शेतकऱ्याने पिकाच्या समस्येचा फोटो पाठवला आहे. कृपया तपासा.',
         isRead: false
@@ -75,7 +77,7 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// ४. ॲडमिनने औषध सुचवणे (Multi-select Resolve) व शेतकऱ्याला नोटिफिकेशन पाठवणे
+// ४. ॲडमिनने औषध सुचवणे व शेतकऱ्याला नोटिफिकेशन/Push पाठवणे
 router.put('/admin/resolve/:id', async (req, res) => {
   try {
     const { suggestedProducts, adminMessage } = req.body;
@@ -98,6 +100,31 @@ router.put('/admin/resolve/:id', async (req, res) => {
         message: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.',
         isRead: false
       });
+
+      // 🔴 Firebase द्वारे मोबाईलवर Push Notification पाठवा
+      const farmer = await User.findById(updated.userId);
+      if (farmer && farmer.fcmToken) {
+          const message = {
+              notification: {
+                  title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
+                  body: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.'
+              },
+              android: {
+                  priority: 'high',
+                  notification: {
+                      channelId: 'shahuraje_orders',
+                      sound: 'default' // मोबाईल वाजण्यासाठी
+                  }
+              },
+              token: farmer.fcmToken
+          };
+          
+          await admin.messaging().send(message);
+          console.log('✅ Firebase Push Notification यशस्वीरीत्या पाठवले!');
+      } else {
+          console.log('❌ शेतकऱ्याचा FCM Token सापडला नाही.');
+      }
+
     } catch (notifErr) {
       console.error("Notification creation error:", notifErr);
     }

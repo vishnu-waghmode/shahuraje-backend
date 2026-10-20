@@ -6,12 +6,15 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     password: { type: String, required: true },
     
-    // 👉 येथे 'delivery_boy' ॲड केले आहे
+    // Role of the user
     role: { type: String, enum: ['farmer', 'admin', 'delivery_boy'], default: 'farmer' }, 
     
     address: { type: String },
     resetOtp: { type: String },           
     resetOtpExpire: { type: Date },
+
+    // 👉 Firebase Push Notification साठी FCM Token
+    fcmToken: { type: String, default: null } 
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
