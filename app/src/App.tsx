@@ -4,7 +4,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
 
-// Firebase Push Notifications
+// 👉 Firebase Push Notifications आयात
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 
@@ -251,30 +251,27 @@ const App = () => {
         console.log('ॲप उघडे असताना नोटिफिकेशन आले: ', notification);
       });
 
-      // 🔴 स्टेटस बार नोटिफिकेशनवर क्लिक केल्यानंतर योग्य पेजवर रिडायरेक्ट करणे
+      // 🔴 नोटिफिकेशनवर क्लिक केल्यावर "Not Found" न येता थेट त्या पेजवर जाणे
       PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
         console.log('नोटिफिकेशनवर क्लिक केले: ', action);
-        
+
         const data = action.notification.data || {};
-        let targetRoute = data.route;
+        let targetRoute = data.route || '/crop-advisory';
 
-        // जर payload मध्ये route नसेल तर title/body वरून ठरवणे
-        if (!targetRoute) {
-          const title = (action.notification.title || '').toLowerCase();
-          const body = (action.notification.body || '').toLowerCase();
-
-          if (title.includes('डॉक्टर') || body.includes('पिक') || body.includes('औषध')) {
-            targetRoute = '/crop-advisory';
-          } else if (title.includes('ऑर्डर') || body.includes('ऑर्डर') || body.includes('डिलिव्हरी')) {
-            targetRoute = '/orders';
-          } else {
-            targetRoute = '/notifications';
-          }
+        // स्लॅशची खात्री करणे
+        if (!targetRoute.startsWith('/')) {
+          targetRoute = '/' + targetRoute;
         }
 
-        // थेट त्या पेजवर जाणे
-        window.location.href = targetRoute;
+        // थेट पेज रीलोड न करता React Router चा अंतर्गत पाथ बदलणे (SPA Safe Navigation)
+        try {
+          window.history.pushState({}, '', targetRoute);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        } catch (e) {
+          window.location.pathname = targetRoute;
+        }
       });
+
     } catch (error) {
       console.error("Push notification setup error:", error);
     }
