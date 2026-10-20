@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { IonPage, IonContent, useIonViewWillEnter } from '@ionic/react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Package, Truck, CheckCircle2, Phone, MapPin, RefreshCw, Bell } from 'lucide-react';
 
 const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
 
 const DeliveryDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -15,51 +16,53 @@ const DeliveryDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const deliveryBoyId = user._id || user.id;
 
-  useEffect(() => {
-    fetchOrders();
-    fetchUnreadNotifications();
-  }, [deliveryBoyId]);
-
-  // १. डिलिव्हरी बॉयच्या अनरीड नोटिफिकेशन्सची संख्या आणणे
-  const fetchUnreadNotifications = async () => {
-    if (!deliveryBoyId) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/notifications/${deliveryBoyId}`);
-      const data = await res.json();
-      if (data.success) {
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (err) {
-      console.error("Notifications fetch error:", err);
-    }
-  };
-
-  // २. असाइन केलेल्या ऑर्डर्स फेच करणे
-  const fetchOrders = async () => {
+  // 1. Data fetch karnyache function
+  const loadDashboardData = useCallback(async () => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentBoyId = currentUser._id || currentUser.id;
 
     if (!currentBoyId) {
-      console.warn("Delivery boy ID bhetla nahi!");
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/delivery/assigned-orders/${currentBoyId}`);
-      const data = await res.json();
-      if (data.success) {
-        setOrders(data.orders || []);
+
+      // Orders ani Notifications donhi parallel fetch karne
+      const [ordersRes, notifRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/delivery/assigned-orders/${currentBoyId}`),
+        fetch(`${API_BASE_URL}/api/notifications/${currentBoyId}`)
+      ]);
+
+      const ordersData = await ordersRes.json();
+      const notifData = await notifRes.json();
+
+      if (ordersData.success) {
+        setOrders(ordersData.orders || []);
+      }
+
+      if (notifData.success) {
+        setUnreadCount(notifData.unreadCount || 0);
       }
     } catch (err) {
-      console.error("Orders fetch error:", err);
+      console.error("Dashboard auto-reload error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ३. ऑर्डर स्टेटस अपडेट करणे
+  // 2. Ionic Lifecycle: Jevha pan screen focus madhe yeil tevha auto-fetch
+  useIonViewWillEnter(() => {
+    loadDashboardData();
+  });
+
+  // 3. Notification click / Route change zalya-zalya lagech refresh karne
+  useEffect(() => {
+    loadDashboardData();
+  }, [location.key, loadDashboardData]);
+
+  // 4. Status update handler
   const handleUpdateStatus = (orderId, newStatus) => {
     setUpdatingId(orderId);
     sendStatusRequest(orderId, newStatus, null, null);
@@ -80,7 +83,7 @@ const DeliveryDashboard = () => {
       const data = await res.json();
       if (data.success) {
         alert(newStatus === 'Picked_Up' ? 'Order pickup keli!' : 'Order deliver keli!');
-        fetchOrders();
+        loadDashboardData();
       } else {
         alert('Truti: ' + (data.error || 'Punha prayatna kara'));
       }
@@ -91,7 +94,6 @@ const DeliveryDashboard = () => {
     }
   };
 
-  // ४. नोटिफिकेशन आयकॉनवर क्लिक केल्यावर नोटिफिकेशन्स पेजवर जाणे
   const handleBellClick = () => {
     setUnreadCount(0);
     navigate('/notifications');
@@ -110,7 +112,7 @@ const DeliveryDashboard = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* 🔴 Bell Icon (लाल बॅजसह) */}
+              {/* Bell Icon */}
               <button 
                 onClick={handleBellClick}
                 className="relative p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
@@ -126,7 +128,7 @@ const DeliveryDashboard = () => {
 
               {/* Refresh Button */}
               <button 
-                onClick={() => { fetchOrders(); fetchUnreadNotifications(); }}
+                onClick={loadDashboardData}
                 className="p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
                 title="Refresh Orders"
               >
