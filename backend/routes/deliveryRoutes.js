@@ -84,7 +84,7 @@ router.put('/update-status/:orderId', async (req, res) => {
           console.error("Notification DB save error:", dbErr);
         }
 
-        // 2. Firebase Push Notification
+        // 2. Firebase Push Notification (शेतकऱ्यासाठी)
         try {
           const customer = await User.findById(order.userId);
           
@@ -95,7 +95,6 @@ router.put('/update-status/:orderId', async (req, res) => {
                 title: notifTitle,
                 body: notifMessage
               },
-              // 👉 Status bar notification click kelyavar direct /orders page var route karnyasathi:
               data: {
                 route: '/orders',
                 type: 'ORDER',
@@ -138,21 +137,77 @@ router.get('/delivery-boys', async (req, res) => {
   }
 });
 
-// 4. Admin ne order delivery boy la assign karne
+// 4. Admin ne order delivery boy la assign karne + Delivery Boy ला Push Notification पाठवणे 🔴
 const assignOrderHandler = async (req, res) => {
   try {
     const { orderId, deliveryBoyId } = req.body;
     if (!orderId) {
       return res.status(400).json({ success: false, error: 'Order ID required ahe' });
     }
+
     const updateFields = {
       deliveryBoyId: deliveryBoyId ? deliveryBoyId : null,
       deliveryStatus: deliveryBoyId ? 'Assigned' : 'Pending',
       status: deliveryBoyId ? 'Processing' : 'Pending'
     };
+
     const updatedOrder = await Order.findByIdAndUpdate(orderId, updateFields, { new: true })
       .populate('userId', 'name phone')
       .populate('deliveryBoyId', 'name phone');
+
+    // 🔴 ॲडमिनने डिलिव्हरी बॉय सिलेक्ट केल्यावर त्याला थेट मोबाईलवर नोटिफिकेशन पाठवणे
+    if (deliveryBoyId) {
+      try {
+        const boy = await User.findById(deliveryBoyId);
+
+        if (boy && boy.fcmToken) {
+          const shortOrderId = updatedOrder._id.toString().substring(18).toUpperCase();
+          const customerName = updatedOrder.customerName || updatedOrder.userId?.name || 'शेतकरी ग्राहक';
+
+          // १. डेटाबेसमध्ये डिलिव्हरी बॉयसाठी नोटिफिकेशन सेव्ह करणे
+          await Notification.create({
+            userId: boy._id,
+            title: 'नवीन डिलिव्हरी मिळाली! 📦',
+            message: `तुम्हाला ऑर्डर #${shortOrderId} (${customerName}) डिलिव्हर करण्यासाठी दिली आहे. कृपया तपासा.`,
+            type: 'DELIVERY_ASSIGNED',
+            relatedId: updatedOrder._id,
+            isRead: false
+          });
+
+          // २. Firebase द्वारे डिलिव्हरी बॉयच्या फोनवर पुश नोटिफिकेशन पाठवणे
+          const boyMessage = {
+            token: boy.fcmToken,
+            notification: {
+              title: 'नवीन डिलिव्हरी मिळाली! 📦',
+              body: `ऑर्डर #${shortOrderId} (${customerName}) तुमच्याकडे सोपवली आहे. डॅशबोर्ड उघडा.`
+            },
+            data: {
+              route: '/delivery-dashboard',
+              type: 'DELIVERY_ASSIGNED',
+              orderId: updatedOrder._id.toString()
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'shahuraje_orders',
+                sound: 'default',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+                priority: 'high'
+              }
+            }
+          };
+
+          const pushResponse = await getMessaging().send(boyMessage);
+          console.log('✅ डिलिव्हरी बॉयला पुश नोटिफिकेशन गेले! Response:', pushResponse);
+        } else {
+          console.warn('⚠️ या डिलिव्हरी बॉयचा FCM Token डेटाबेसमध्ये सापडला नाही.');
+        }
+      } catch (pushErr) {
+        console.error('❌ डिलिव्हरी बॉयला पुश पाठवताना एरर:', pushErr);
+      }
+    }
+
     res.status(200).json({ success: true, message: 'Delivery boy assign jhala!', order: updatedOrder });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

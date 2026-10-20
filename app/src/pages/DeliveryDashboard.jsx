@@ -14,7 +14,14 @@ const DeliveryDashboard = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+
+    // 🔴 Dashboard ughadtach Delivery boy che unread notification badge clear karne
+    if (deliveryBoyId) {
+      fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${deliveryBoyId}`, {
+        method: 'PUT'
+      }).catch((err) => console.error("Error clearing badge for delivery boy:", err));
+    }
+  }, [deliveryBoyId]);
 
   const fetchOrders = async () => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
@@ -40,7 +47,6 @@ const DeliveryDashboard = () => {
     }
   };
 
-  // 👉 अपडेटेड: Geolocation काढून थेट API कॉल करणे
   const handleUpdateStatus = (orderId, newStatus) => {
     setUpdatingId(orderId);
     sendStatusRequest(orderId, newStatus, null, null);
