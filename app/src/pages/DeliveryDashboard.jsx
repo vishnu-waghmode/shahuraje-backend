@@ -1,28 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
-import { Package, Truck, CheckCircle2, Phone, MapPin, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Package, Truck, CheckCircle2, Phone, MapPin, RefreshCw, Bell } from 'lucide-react';
 
 const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
 
 const DeliveryDashboard = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const deliveryBoyId = user._id || user.id;
 
   useEffect(() => {
     fetchOrders();
-
-    // 🔴 Dashboard ughadtach Delivery boy che unread notification badge clear karne
-    if (deliveryBoyId) {
-      fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${deliveryBoyId}`, {
-        method: 'PUT'
-      }).catch((err) => console.error("Error clearing badge for delivery boy:", err));
-    }
+    fetchUnreadNotifications();
   }, [deliveryBoyId]);
 
+  // १. डिलिव्हरी बॉयच्या अनरीड नोटिफिकेशन्सची संख्या आणणे
+  const fetchUnreadNotifications = async () => {
+    if (!deliveryBoyId) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/notifications/${deliveryBoyId}`);
+      const data = await res.json();
+      if (data.success) {
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error("Notifications fetch error:", err);
+    }
+  };
+
+  // २. असाइन केलेल्या ऑर्डर्स फेच करणे
   const fetchOrders = async () => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentBoyId = currentUser._id || currentUser.id;
@@ -47,6 +59,7 @@ const DeliveryDashboard = () => {
     }
   };
 
+  // ३. ऑर्डर स्टेटस अपडेट करणे
   const handleUpdateStatus = (orderId, newStatus) => {
     setUpdatingId(orderId);
     sendStatusRequest(orderId, newStatus, null, null);
@@ -78,6 +91,12 @@ const DeliveryDashboard = () => {
     }
   };
 
+  // ४. नोटिफिकेशन आयकॉनवर क्लिक केल्यावर नोटिफिकेशन्स पेजवर जाणे
+  const handleBellClick = () => {
+    setUnreadCount(0);
+    navigate('/notifications');
+  };
+
   return (
     <IonPage>
       <IonContent className="bg-gray-50">
@@ -89,12 +108,31 @@ const DeliveryDashboard = () => {
               <h1 className="text-lg font-black tracking-wide">Delivery Partner Panel</h1>
               <p className="text-xs text-green-100 mt-0.5">{user.name ? `Nav: ${user.name}` : 'Shahuraje Krushi Kendra'}</p>
             </div>
-            <button 
-              onClick={fetchOrders}
-              className="p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* 🔴 Bell Icon (लाल बॅजसह) */}
+              <button 
+                onClick={handleBellClick}
+                className="relative p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
+                title="Notifications"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Refresh Button */}
+              <button 
+                onClick={() => { fetchOrders(); fetchUnreadNotifications(); }}
+                className="p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
+                title="Refresh Orders"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </div>
 
           {/* Orders Container */}

@@ -137,7 +137,7 @@ router.get('/delivery-boys', async (req, res) => {
   }
 });
 
-// 4. Admin ne order delivery boy la assign karne + Delivery Boy ला Push Notification पाठवणे 🔴
+// 4. Admin ne order delivery boy la assign karne + Delivery Boy ला Push Notification पाठवणे
 const assignOrderHandler = async (req, res) => {
   try {
     const { orderId, deliveryBoyId } = req.body;
@@ -155,7 +155,7 @@ const assignOrderHandler = async (req, res) => {
       .populate('userId', 'name phone')
       .populate('deliveryBoyId', 'name phone');
 
-    // 🔴 ॲडमिनने डिलिव्हरी बॉय सिलेक्ट केल्यावर त्याला थेट मोबाईलवर नोटिफिकेशन पाठवणे
+    // 🔴 ॲडमिनने डिलिव्हरी बॉय सिलेक्ट केल्यावर त्याला पुश नोटिफिकेशन पाठवणे
     if (deliveryBoyId) {
       try {
         const boy = await User.findById(deliveryBoyId);
@@ -164,17 +164,17 @@ const assignOrderHandler = async (req, res) => {
           const shortOrderId = updatedOrder._id.toString().substring(18).toUpperCase();
           const customerName = updatedOrder.customerName || updatedOrder.userId?.name || 'शेतकरी ग्राहक';
 
-          // १. डेटाबेसमध्ये डिलिव्हरी बॉयसाठी नोटिफिकेशन सेव्ह करणे
+          // १. डेटाबेसमध्ये Notification मॉडेलच्या व्हॅलिड 'ORDER' type सह सेव्ह करणे
           await Notification.create({
             userId: boy._id,
             title: 'नवीन डिलिव्हरी मिळाली! 📦',
-            message: `तुम्हाला ऑर्डर #${shortOrderId} (${customerName}) डिलिव्हर करण्यासाठी दिली आहे. कृपया तपासा.`,
-            type: 'DELIVERY_ASSIGNED',
+            message: `तुम्हाला ऑर्डर #${shortOrderId} (${customerName}) डिलिव्हर करण्यासाठी दिली आहे. कृपया डॅशबोर्ड तपासा.`,
+            type: 'ORDER', // 👈 'DELIVERY_ASSIGNED' ऐवजी व्हॅलिड enum व्हॅल्यू 'ORDER' वापरली आहे
             relatedId: updatedOrder._id,
             isRead: false
           });
 
-          // २. Firebase द्वारे डिलिव्हरी बॉयच्या फोनवर पुश नोटिफिकेशन पाठवणे
+          // २. Firebase द्वारे डिलिव्हरी बॉयच्या मोबाईलवर Push Notification पाठवणे
           const boyMessage = {
             token: boy.fcmToken,
             notification: {
@@ -183,7 +183,7 @@ const assignOrderHandler = async (req, res) => {
             },
             data: {
               route: '/delivery-dashboard',
-              type: 'DELIVERY_ASSIGNED',
+              type: 'ORDER',
               orderId: updatedOrder._id.toString()
             },
             android: {
@@ -199,9 +199,9 @@ const assignOrderHandler = async (req, res) => {
           };
 
           const pushResponse = await getMessaging().send(boyMessage);
-          console.log('✅ डिलिव्हरी बॉयला पुश नोटिफिकेशन गेले! Response:', pushResponse);
+          console.log('✅ डिलिव्हरी बॉयला पुश नोटिफिकेशन यशस्वीरीत्या गेले! Response:', pushResponse);
         } else {
-          console.warn('⚠️ या डिलिव्हरी बॉयचा FCM Token डेटाबेसमध्ये सापडला नाही.');
+          console.warn('⚠️ या डिलिव्हरी बॉयचा FCM Token डेटाबेसमध्ये सेव्ह नाही.');
         }
       } catch (pushErr) {
         console.error('❌ डिलिव्हरी बॉयला पुश पाठवताना एरर:', pushErr);
