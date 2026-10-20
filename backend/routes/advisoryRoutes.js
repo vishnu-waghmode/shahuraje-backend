@@ -91,46 +91,60 @@ router.put('/admin/resolve/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
     }
 
+    // १. डेटाबेसमध्ये इन-ॲप नोटिफिकेशन सेव्ह करणे
     try {
-      // ॲपच्या आत दाखवण्यासाठी डेटाबेसमध्ये सेव्ह
       await Notification.create({
         userId: updated.userId,
         title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
         message: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.',
         isRead: false
       });
-
-      // 🔴 Firebase द्वारे मोबाईलच्या Status Bar वर Push Notification पाठवा
-      const farmer = await User.findById(updated.userId);
-      if (farmer && farmer.fcmToken) {
-          
-          // 👇 हा नवीन Bulletproof चॅनेल आयडी असलेला कोड 👇
-          const message = {
-              token: farmer.fcmToken,
-              notification: {
-                  title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
-                  body: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
-              },
-              android: {
-                  priority: 'high',
-                  notification: {
-                      channelId: 'shahuraje_orders', // 👈 Android ला स्टेटस बारमध्ये मेसेज दाखवण्यासाठी हे आवश्यक आहे
-                      sound: 'default',
-                      defaultSound: true,
-                      defaultVibrateTimings: true
-                  }
-              }
-          };
-          // 👆 इथपर्यंत 👆
-
-          await admin.messaging().send(message);
-          console.log('✅ Firebase Push Notification यशस्वीरीत्या पाठवले!');
-      } else {
-          console.log('❌ शेतकऱ्याचा FCM Token सापडला नाही.');
-      }
-
+      console.log("✅ इन-ॲप नोटिफिकेशन डेटाबेसमध्ये सेव्ह झाली.");
     } catch (notifErr) {
-      console.error("Notification creation error:", notifErr);
+      console.error("❌ Notification creation error:", notifErr);
+    }
+
+    // २. Firebase द्वारे मोबाईलवर पुश नोटिफिकेशन पाठवणे
+    try {
+      console.log("🔍 शेतकरी शोधत आहे User ID:", updated.userId);
+      const farmer = await User.findById(updated.userId);
+
+      if (farmer) {
+        console.log("👤 शेतकरी सापडला:", farmer.name);
+        console.log("🔑 शेतकऱ्याचा FCM टोकन:", farmer.fcmToken ? farmer.fcmToken.substring(0, 20) + "..." : "नाही");
+
+        if (farmer.fcmToken) {
+          const message = {
+            token: farmer.fcmToken,
+            notification: {
+              title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
+              body: adminMessage || 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'shahuraje_orders',
+                sound: 'default',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+                priority: 'high'
+              }
+            },
+            headers: {
+              Urgency: 'high'
+            }
+          };
+
+          const response = await admin.messaging().send(message);
+          console.log('🚀 Firebase कडून रिस्पॉन्स (सक्सेस):', response);
+        } else {
+          console.warn('⚠️ या शेतकऱ्याच्या अकाउंटवर fcmToken सेव्ह केलेला नाही!');
+        }
+      } else {
+        console.warn('⚠️ डेटाबेसमध्ये या ID चा युझर सापडला नाही:', updated.userId);
+      }
+    } catch (pushErr) {
+      console.error('❌ Firebase Messaging Send मध्ये एरर आला:', pushErr);
     }
 
     res.status(200).json({ success: true, message: "औषध सुचवले आणि नोटिफिकेशन पाठवली!", data: updated });
