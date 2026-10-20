@@ -21,7 +21,7 @@ const Notifications = () => {
     }
   }, [userId]);
 
-  // 👉 पेज उघडताच नोटिफिकेशन्स आणणे आणि लगेचच सर्व 'Read' (वाचले) म्हणून मार्क करणे
+  // 👉 पेज उघडताच नोटिफिकेशन्स आणणे आणि एकाच API कॉलद्वारे सर्व 'Read' म्हणून मार्क करणे
   const fetchAndMarkAllAsRead = async () => {
     try {
       setLoading(true);
@@ -29,16 +29,11 @@ const Notifications = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        const list = data.notifications || [];
-        setNotifications(list);
+        setNotifications(data.notifications || []);
 
-        // 👉 पेज ओपन होताच, ज्या unread ahet tyana background madhe mark-read karayche
-        list.forEach(async (notif) => {
-          if (!notif.isRead) {
-            await fetch(`${API_BASE_URL}/api/notifications/mark-read/${notif._id}`, {
-              method: 'PUT'
-            });
-          }
+        // 🔴 एकाच वेळी सर्व नोटिफिकेशन्स Read करणे (बॅज त्वरित गायब होईल)
+        await fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${userId}`, {
+          method: 'PUT'
         });
       }
     } catch (error) {

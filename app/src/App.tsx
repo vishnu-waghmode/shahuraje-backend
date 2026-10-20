@@ -4,7 +4,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { App as CapApp } from '@capacitor/app';
 
-// 👉 १. Firebase Push Notifications साठी आवश्यक आयात
+// Firebase Push Notifications
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 
@@ -36,7 +36,7 @@ import WeatherDetail from './pages/WeatherDetail';
 import DeliveryDashboard from './pages/DeliveryDashboard';
 import TrackDelivery from './pages/TrackDelivery';
 import Notifications from './pages/Notifications';
-import CropAdvisory from './pages/CropAdvisory'; // 👉 पिकांचा डॉक्टर इंपोर्ट केला
+import CropAdvisory from './pages/CropAdvisory';
 
 import { CartProvider } from './CartContext';
 import { 
@@ -189,7 +189,6 @@ const ProtectedHomeRoute = () => {
 };
 
 const App = () => {
-
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       setupPushNotifications();
@@ -210,18 +209,18 @@ const App = () => {
 
       await PushNotifications.register();
 
-      // 👉 Android 8+ साठी Notification Channel (बॅकग्राउंड मेसेजसाठी अत्यंत आवश्यक)
+      // Android 8+ Notification Channel
       if (Capacitor.getPlatform() === 'android') {
-        PushNotifications.createChannel({
+        await PushNotifications.createChannel({
           id: 'shahuraje_orders',
           name: 'Order Updates',
           description: 'ऑर्डरचे अपडेट्स मिळवण्यासाठी',
           importance: 5,
           visibility: 1,
-        }).then(() => console.log('Notification Channel तयार झाला!'));
+        });
       }
 
-      // 👉 टोकन मिळवणे आणि बॅकएंडला पाठवणे
+      // टोकन मिळवणे आणि बॅकएंडला पाठवणे
       PushNotifications.addListener('registration', async (token) => {
         console.log('Firebase FCM Token: ', token.value);
         localStorage.setItem('fcm_token', token.value);
@@ -252,10 +251,29 @@ const App = () => {
         console.log('ॲप उघडे असताना नोटिफिकेशन आले: ', notification);
       });
 
-      // 🔴 नोटिफिकेशनवर क्लिक केल्यावर थेट Notifications पेजवर जाणे
-      PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-        console.log('नोटिफिकेशनवर क्लिक केले: ', notification);
-        // window.location.href = '/notifications';
+      // 🔴 स्टेटस बार नोटिफिकेशनवर क्लिक केल्यानंतर योग्य पेजवर रिडायरेक्ट करणे
+      PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        console.log('नोटिफिकेशनवर क्लिक केले: ', action);
+        
+        const data = action.notification.data || {};
+        let targetRoute = data.route;
+
+        // जर payload मध्ये route नसेल तर title/body वरून ठरवणे
+        if (!targetRoute) {
+          const title = (action.notification.title || '').toLowerCase();
+          const body = (action.notification.body || '').toLowerCase();
+
+          if (title.includes('डॉक्टर') || body.includes('पिक') || body.includes('औषध')) {
+            targetRoute = '/crop-advisory';
+          } else if (title.includes('ऑर्डर') || body.includes('ऑर्डर') || body.includes('डिलिव्हरी')) {
+            targetRoute = '/orders';
+          } else {
+            targetRoute = '/notifications';
+          }
+        }
+
+        // थेट त्या पेजवर जाणे
+        window.location.href = targetRoute;
       });
     } catch (error) {
       console.error("Push notification setup error:", error);
@@ -291,7 +309,7 @@ const App = () => {
               <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
               <Route path="/track-order/:orderId" element={<TrackDelivery />} />
               <Route path="/notifications" element={<Notifications />} />
-              <Route path="/crop-advisory" element={<CropAdvisory />} /> {/* 👉 इथे राऊट ॲड केला */}
+              <Route path="/crop-advisory" element={<CropAdvisory />} />
             </Routes>
           </IonRouterOutlet>
         </IonReactRouter>

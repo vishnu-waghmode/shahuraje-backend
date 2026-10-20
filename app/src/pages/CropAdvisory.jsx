@@ -3,6 +3,8 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Image as ImageIcon, Send, Clock, CheckCircle, AlertCircle, Leaf, X, Loader2 } from 'lucide-react';
 
+const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
+
 const CropAdvisory = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('नवीन_तक्रार'); 
@@ -15,6 +17,15 @@ const CropAdvisory = () => {
 
   const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userId = savedUser?._id || savedUser?.id;
+
+  // 🔴 हे पेज उघडताच बॅकग्राउंडमध्ये सर्व नोटिफिकेशन्स Mark as Read करणे (बॅज रिमूव्ह होईल)
+  useEffect(() => {
+    if (userId) {
+      fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${userId}`, {
+        method: 'PUT'
+      }).catch(err => console.error("Error clearing badge:", err));
+    }
+  }, [userId]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -43,7 +54,7 @@ const CropAdvisory = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://shahuraje-backend-1.onrender.com/api/advisory/create', {
+      const response = await fetch(`${API_BASE_URL}/api/advisory/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -77,7 +88,7 @@ const CropAdvisory = () => {
       if (!userId || activeTab !== 'जुने_सल्ले') return;
       setFetchingHistory(true);
       try {
-        const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/advisory/user/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/advisory/user/${userId}`);
         const data = await response.json();
         if (data.success) {
           setPastQueries(data.data);
@@ -173,7 +184,7 @@ const CropAdvisory = () => {
                 <div className="mt-5">
                   <label className="block text-xs font-bold text-gray-700 mb-2">पिकाची समस्या (ऐच्छिक / Optional)</label>
                   <textarea 
-                    rows="3" 
+                    rows={3} 
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="उदा. टोमॅटोची पाने पिवळी पडत आहेत..."

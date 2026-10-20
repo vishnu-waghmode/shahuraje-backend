@@ -111,11 +111,17 @@ router.put('/admin/resolve/:id', async (req, res) => {
 
       if (farmer && farmer.fcmToken) {
         // 🔴 पूर्णपणे अचूक आणि व्हॅलिड Payload (Unknown headers काढून टाकले आहे)
-        const message = {
+       const message = {
           token: farmer.fcmToken,
           notification: {
             title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
             body: adminMessage || 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
+          },
+          // 👉 Click kelyavar kontya route var jayche te sangnyasathi data block:
+          data: {
+            route: '/crop-advisory',
+            type: 'ADVISORY',
+            advisoryId: updated._id.toString()
           },
           android: {
             priority: 'high',
