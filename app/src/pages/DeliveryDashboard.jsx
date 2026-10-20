@@ -16,7 +16,7 @@ const DeliveryDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const deliveryBoyId = user._id || user.id;
 
-  // 1. Data fetch karnyache function
+  // १. डॅशबोर्ड डेटा आणणे आणि नोटिफिकेशन बॅज लगेच क्लिअर करणे 🔴
   const loadDashboardData = useCallback(async () => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentBoyId = currentUser._id || currentUser.id;
@@ -29,21 +29,18 @@ const DeliveryDashboard = () => {
     try {
       setLoading(true);
 
-      // Orders ani Notifications donhi parallel fetch karne
-      const [ordersRes, notifRes] = await Promise.all([
+      // 👉 स्क्रीन उघडताच सर्वात आधी UI वरील लाल बॅज लगेच ० करा
+      setUnreadCount(0);
+
+      // 👉 ऑर्डर्स फेच करणे आणि बॅकएंडमधील सर्व नोटिफिकेशन्स 'Read' मार्क करणे
+      const [ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/delivery/assigned-orders/${currentBoyId}`),
-        fetch(`${API_BASE_URL}/api/notifications/${currentBoyId}`)
+        fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${currentBoyId}`, { method: 'PUT' })
       ]);
 
       const ordersData = await ordersRes.json();
-      const notifData = await notifRes.json();
-
       if (ordersData.success) {
         setOrders(ordersData.orders || []);
-      }
-
-      if (notifData.success) {
-        setUnreadCount(notifData.unreadCount || 0);
       }
     } catch (err) {
       console.error("Dashboard auto-reload error:", err);
@@ -52,17 +49,17 @@ const DeliveryDashboard = () => {
     }
   }, []);
 
-  // 2. Ionic Lifecycle: Jevha pan screen focus madhe yeil tevha auto-fetch
+  // २. आयोनिक लाइफसायकल: स्क्रीन समोर येताच रन होईल
   useIonViewWillEnter(() => {
     loadDashboardData();
   });
 
-  // 3. Notification click / Route change zalya-zalya lagech refresh karne
+  // ३. नोटिफिकेशन क्लिक किंवा राऊट बदलताच ऑटो-रिफ्रेश
   useEffect(() => {
     loadDashboardData();
   }, [location.key, loadDashboardData]);
 
-  // 4. Status update handler
+  // ४. स्टेटस अपडेट करणे (Picked Up / Delivered)
   const handleUpdateStatus = (orderId, newStatus) => {
     setUpdatingId(orderId);
     sendStatusRequest(orderId, newStatus, null, null);
@@ -112,7 +109,7 @@ const DeliveryDashboard = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Bell Icon */}
+              {/* Bell Icon (घंटेचा आयकॉन) */}
               <button 
                 onClick={handleBellClick}
                 className="relative p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
