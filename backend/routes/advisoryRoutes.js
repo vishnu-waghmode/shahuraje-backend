@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const CropAdvisory = require('../models/CropAdvisory');
 const Notification = require('../models/Notification'); 
-const User = require('../models/User'); // 👉 User Model
-const admin = require('firebase-admin'); // 👉 Firebase Admin
+const User = require('../models/User'); 
+const admin = require('firebase-admin'); 
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({
@@ -33,7 +33,6 @@ router.post('/create', async (req, res) => {
 
     await newAdvisory.save();
 
-    // ॲडमिनसाठी (userId: null) नोटिफिकेशन तयार करणे
     try {
       await Notification.create({
         userId: null, 
@@ -92,8 +91,8 @@ router.put('/admin/resolve/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
     }
 
-    // 👉 शेतकऱ्यासाठी नोटिफिकेशन तयार करणे
     try {
+      // ॲपच्या आत दाखवण्यासाठी डेटाबेसमध्ये सेव्ह
       await Notification.create({
         userId: updated.userId,
         title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
@@ -101,24 +100,20 @@ router.put('/admin/resolve/:id', async (req, res) => {
         isRead: false
       });
 
-      // 🔴 Firebase द्वारे मोबाईलवर Push Notification पाठवा
+      // 🔴 Firebase द्वारे मोबाईलच्या Status Bar वर Push Notification पाठवा
       const farmer = await User.findById(updated.userId);
       if (farmer && farmer.fcmToken) {
+          
+          // 👇 तू दिलेला साधा कोड इथे ॲड केला आहे 👇
           const message = {
               notification: {
-                  title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
-                  body: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.'
-              },
-              android: {
-                  priority: 'high',
-                  notification: {
-                      channelId: 'shahuraje_orders',
-                      sound: 'default' // मोबाईल वाजण्यासाठी
-                  }
+                  title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
+                  body: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
               },
               token: farmer.fcmToken
           };
-          
+          // 👆 इथपर्यंत 👆
+
           await admin.messaging().send(message);
           console.log('✅ Firebase Push Notification यशस्वीरीत्या पाठवले!');
       } else {
