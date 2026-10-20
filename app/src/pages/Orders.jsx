@@ -15,6 +15,8 @@ import {
   Camera // 👉 पिकांचा डॉक्टर (कॅमेरा आयकॉन)
 } from 'lucide-react';
 
+const API_BASE_URL = 'https://shahuraje-backend-1.onrender.com';
+
 const Orders = () => {
   const navigate = useNavigate();
   
@@ -38,7 +40,7 @@ const Orders = () => {
           return;
         }
 
-        const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/orders/user/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/orders/user/${userId}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -54,7 +56,27 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  // ३. टॅबनुसार फिल्टर करणे
+  // 🔴 ३. ऑर्डर्स पेज उघडताच सर्व नोटिफिकेशन्स 'Read' करणे (Bell Icon वरील लाल बॅज लगेच काढण्यासाठी)
+  useEffect(() => {
+    const clearNotificationBadge = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        const userId = user?.id || user?._id;
+
+        if (userId) {
+          await fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${userId}`, {
+            method: 'PUT'
+          });
+        }
+      } catch (err) {
+        console.error("Error clearing notification badge on orders page:", err);
+      }
+    };
+
+    clearNotificationBadge();
+  }, []);
+
+  // ४. टॅबनुसार फिल्टर करणे
   const filteredOrders = myOrders.filter(order => {
     if (activeTab === 'सर्व') return true;
     if (activeTab === 'प्रलंबित' && order.status === 'Pending') return true;
@@ -171,7 +193,7 @@ const Orders = () => {
                       <div className="font-black text-gray-800 text-sm">एकूण: ₹{order.totalAmount}</div>
                     </div>
 
-                    {/* 👉 लाईव्ह ट्रॅकिंग बटण (फक्त प्रलंबित किंवा प्रॉसेसिंग असणाऱ्या ऑर्डर्ससाठीच दिसेल, पोहोचलेल्या किंवा रद्द झालेल्यांसाठी नाही) */}
+                    {/* 👉 लाईव्ह ट्रॅकिंग बटण */}
                     {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
                       <button
                         onClick={(e) => {
@@ -219,7 +241,7 @@ const Orders = () => {
           <span className="text-[10px] font-black mt-0.5 tracking-wide">ऑर्डर्स</span>
         </div>
 
-        {/* 👉 Professional Camera Button (बारच्या आत मध्यभागी) */}
+        {/* 👉 Professional Camera Button */}
         <div 
           onClick={() => navigate('/crop-advisory')} 
           className="flex flex-col items-center justify-center cursor-pointer transition-all duration-150 active:scale-90 group px-2"

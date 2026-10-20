@@ -6,7 +6,6 @@ const User = require('../models/User');
 const Notification = require('../models/Notification'); 
 const bcrypt = require('bcryptjs'); 
 
-// 🔴 नवीन Firebase Modular Messaging पद्धत
 const { getMessaging } = require('firebase-admin/messaging'); 
 
 // 1. Delivery boy la assign jhalelya orders milvane
@@ -34,12 +33,9 @@ router.get('/assigned-orders/:deliveryBoyId', async (req, res) => {
   }
 });
 
-// 2. Delivery boy ne status update karne + शेतकऱ्याला नोटिफिकेशन पाठवणे 🔴
+// 2. Delivery boy ne status update karne + Shetkaryala push notification
 router.put('/update-status/:orderId', async (req, res) => {
   try {
-    console.log("👉 Status Update API कॉल झाली! Order ID:", req.params.orderId);
-    console.log("👉 Frontend कडून आलेला डेटा:", req.body);
-
     const { deliveryStatus, lat, lng } = req.body;
     const updateData = {};
     if (deliveryStatus) updateData.deliveryStatus = deliveryStatus;
@@ -60,9 +56,6 @@ router.put('/update-status/:orderId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
 
-    console.log("👉 ऑर्डर डेटाबेसमध्ये अपडेट झाली. Customer ID:", order.userId);
-
-    // 👉 शेतकऱ्याला नोटिफिकेशन पाठवण्याचा कोड
     if (order.userId) {
       let notifTitle = '';
       let notifMessage = '';
@@ -73,27 +66,25 @@ router.put('/update-status/:orderId', async (req, res) => {
       } else if (deliveryStatus === 'Delivered') {
         notifTitle = 'ऑर्डर पोहोचली (Delivered) 🎉';
         notifMessage = 'तुमची ऑर्डर यशस्वीरीत्या तुम्हाला देण्यात आली आहे. शाहूराजे कृषी केंद्रावर खरेदी केल्याबद्दल धन्यवाद!';
-      } else {
-        console.log("⚠️ Status मॅच झाले नाही. आलेले स्टेटस:", deliveryStatus);
       }
 
       if (notifTitle) {
-        // १. डेटाबेसमध्ये नोटिफिकेशन सेव्ह करा (In-App Notification)
+        // 1. In-App Notification save
         try {
           const userNotification = new Notification({
             userId: order.userId, 
             title: notifTitle,
             message: notifMessage,
             type: 'ORDER',
-            relatedId: order._id
+            relatedId: order._id,
+            isRead: false
           });
           await userNotification.save();
-          console.log("✅ ऑर्डर इन-ॲप नोटिफिकेशन सेव्ह झाली.");
         } catch (dbErr) {
-          console.error("❌ Notification DB save error:", dbErr);
+          console.error("Notification DB save error:", dbErr);
         }
 
-        // २. Firebase द्वारे मोबाईलच्या स्क्रीनवर Push Notification पाठवा
+        // 2. Firebase Push Notification
         try {
           const customer = await User.findById(order.userId);
           
@@ -104,9 +95,10 @@ router.put('/update-status/:orderId', async (req, res) => {
                 title: notifTitle,
                 body: notifMessage
               },
-              // 🔴 क्लिक केल्यावर थेट ऑर्डर्स पेजवर जाण्यासाठी data ब्लॉक
+              // 👉 Status bar notification click kelyavar direct /orders page var route karnyasathi:
               data: {
                 route: '/orders',
+                type: 'ORDER',
                 orderId: order._id.toString()
               },
               android: {
@@ -121,26 +113,22 @@ router.put('/update-status/:orderId', async (req, res) => {
               }
             };
             
-            // 🔴 getMessaging().send चा वापर
             const pushResponse = await getMessaging().send(message);
-            console.log('✅ Firebase Delivery Push यशस्वीरीत्या पाठवले! Response:', pushResponse);
-          } else {
-            console.log('❌ शेतकऱ्याचा FCM Token सापडला नाही, त्यामुळे Push Notification गेले नाही.');
+            console.log('✅ Firebase Delivery Push Response:', pushResponse);
           }
         } catch (pushError) {
-          console.error('❌ Push notification पाठवताना एरर:', pushError);
+          console.error('❌ Delivery push error:', pushError);
         }
       }
     }
 
     res.status(200).json({ success: true, order });
   } catch (err) {
-    console.error('❌ API मध्ये एरर आला:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 3. Sarv delivery boys chi list milvane (Admin Web Dropdown sathi)
+// 3. Sarv delivery boys chi list milvane
 router.get('/delivery-boys', async (req, res) => {
   try {
     const deliveryBoys = await User.find({ role: 'delivery_boy' }).select('name phone email _id');
@@ -202,7 +190,7 @@ router.post('/add-delivery-boy', async (req, res) => {
   }
 });
 
-// 6. ॲडमिनद्वारे डिलिव्हरी बॉयची माहिती आणि पासवर्ड अपडेट करणे
+// 6. Admin dware delivery boy update karne
 router.put('/update-delivery-boy/:id', async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
