@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; 
 import { checkHasMpin, unlockApp } from '../mpinStorage';
 
+// 🔴 बदल १: PushNotifications इम्पोर्ट करा
+import { PushNotifications } from '@capacitor/push-notifications';
+
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -13,7 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Page ughadtach aadhi save kelele credentials check karne
+  // Page उघडताच आधी सेव्ह केलेले Credentials चेक करणे
   useEffect(() => {
     const savedEmail = localStorage.getItem('remembered_email');
     const savedPassword = localStorage.getItem('remembered_password');
@@ -23,6 +26,37 @@ const Login = () => {
       setRememberMe(true);
     }
   }, []);
+
+  // 🔴 बदल २: FCM Token अपडेट करणारे फंक्शन जोडा
+  const updateFcmToken = async (userId) => {
+    try {
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+      
+      if (permStatus.receive !== 'granted') {
+        console.log('Push notification permission denied');
+        return;
+      }
+
+      await PushNotifications.register();
+
+      PushNotifications.addListener('registration', async (token) => {
+        console.log('नवीन FCM Token मिळाला: ', token.value);
+        
+        // तुझ्या Backend ला टोकन पाठव
+        await fetch(`https://shahuraje-backend-1.onrender.com/api/users/update-fcm-token/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fcmToken: token.value })
+        });
+        console.log('डेटाबेसमध्ये नवीन टोकन सेव्ह झाला!');
+      });
+    } catch (error) {
+      console.error('FCM Token एरर:', error);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -42,7 +76,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        // Remember Me checked asel tar credentials save karne
+        // Remember Me checked असेल तर credentials सेव्ह करणे
         if (rememberMe) {
           localStorage.setItem('remembered_email', email);
           localStorage.setItem('remembered_password', password);
@@ -51,11 +85,15 @@ const Login = () => {
           localStorage.removeItem('remembered_password');
         }
 
-        // 👉 बदल १: आधी Role चेक करून योग्य पेजवर Navigate करा
+        // 🔴 बदल ३: डॅशबोर्डवर जाण्यापूर्वी FCM Token अपडेट करा
+        const userId = data.user._id || data.user.id;
+        updateFcmToken(userId);
+
+        // Role चेक करून योग्य पेजवर Navigate करा
         if (data.user?.role === 'delivery_boy') {
           navigate('/delivery-dashboard', { replace: true });
         } else {
-          // Sadha shetkari asel tar MPIN check karne
+          // साधा शेतकरी असेल तर MPIN चेक करणे
           if (!checkHasMpin()) {
             navigate('/setup-mpin', { replace: true });
           } else {
@@ -63,7 +101,7 @@ const Login = () => {
           }
         }
 
-        // 👉 बदल २: unlockApp ला थोडा delay द्या, जेणेकरून App.jsx मध्ये गोंधळ होणार नाही
+        // unlockApp ला थोडा delay द्या, जेणेकरून App.jsx मध्ये गोंधळ होणार नाही
         setTimeout(() => {
           if (typeof unlockApp === 'function') {
             unlockApp();
@@ -86,7 +124,7 @@ const Login = () => {
       <IonContent fullscreen className="bg-white">
         <div className="w-full h-full flex flex-col justify-between px-6 py-8 overflow-y-auto">
           
-          {/* Shirsh bhag: Shahuraje Brand Logo */}
+          {/* शीर्ष भाग: Shahuraje Brand Logo */}
           <div className="flex flex-col items-center text-center mt-4">
             <div className="w-56 max-w-[70%] drop-shadow-md flex items-center justify-center">
               <img 
@@ -101,7 +139,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Madhya bhag: Form */}
+          {/* मध्य भाग: Form */}
           <div className="my-auto w-full max-w-sm mx-auto py-4">
             <div className="text-center mb-5">
               <h3 className="text-2xl font-black text-gray-900 mb-1">आपले स्वागत आहे!</h3>
@@ -150,7 +188,7 @@ const Login = () => {
                 </button>
               </div>
 
-              {/* Remember Me checkbox aani Forgot password */}
+              {/* Remember Me checkbox आणि Forgot password */}
               <div className="flex items-center justify-between text-xs font-semibold">
                 <label className="flex items-center space-x-2 cursor-pointer text-gray-600">
                   <input 
@@ -211,7 +249,7 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Talacha bhag: Nondani link */}
+          {/* तळाचा भाग: नोंदणी लिंक */}
           <div className="text-center pb-2">
             <p className="text-xs font-semibold text-gray-500">
               नवीन खाते तयार करा?{' '}
