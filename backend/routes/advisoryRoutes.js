@@ -12,7 +12,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे
+// १. शेतकऱ्याने नवीन फोटो/तक्रार पाठवणे (आता हा चॅटचा पहिला मेसेज बनेल)
 router.post('/create', async (req, res) => {
   try {
     const { userId, description, imageBase64 } = req.body;
@@ -28,7 +28,13 @@ router.post('/create', async (req, res) => {
     const newAdvisory = new CropAdvisory({
       userId,
       image: uploadResponse.secure_url,
-      description
+      description,
+      // 🔴 चॅटची सुरुवात: पहिला मेसेज म्हणून सेव्ह करणे
+      messages: [{
+        sender: 'farmer',
+        text: description || 'माझ्या पिकाला खालील समस्या आली आहे.',
+        image: uploadResponse.secure_url
+      }]
     });
 
     await newAdvisory.save();
@@ -76,75 +82,135 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// ४. ॲडमिनने औषध सुचवणे व शेतकऱ्याला नोटिफिकेशन/Push पाठवणे
+// ४. 🔴 नवीन API: चॅटमध्ये मेसेज किंवा फोटो पाठवणे (Two-way Communication)
+router.post('/message/:id', async (req, res) => {
+  try {
+    const { sender, text, imageBase64 } = req.body; 
+    // sender: 'admin' किंवा 'farmer' असेल
+
+    const advisory = await CropAdvisory.findById(req.params.id);
+    if (!advisory) {
+      return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
+    }
+
+    let imageUrl = null;
+    // जर मेसेजमध्ये नवीन फोटो असेल तर तो Cloudinary वर अपलोड करा
+    if (imageBase64) {
+      const uploadResponse = await cloudinary.uploader.upload(imageBase64, { 
+        folder: "crop_advisory_chat" 
+      });
+      imageUrl = uploadResponse.secure_url;
+    }
+
+    // मेसेज Array मध्ये पुश करा
+    advisory.messages.push({
+      sender,
+      text: text || '',
+      image: imageUrl
+    });
+
+    // जर ॲडमिनने पहिला रिप्लाय दिला, तर स्टेट्स 'Pending' वरून 'In-Progress' करा
+    if (sender === 'admin' && advisory.status === 'Pending') {
+      advisory.status = 'In-Progress';
+    }
+
+    await advisory.save();
+
+    // जर ॲडमिनने मेसेज केला असेल, तर शेतकऱ्याला पुश नोटिफिकेशन पाठवा
+    if (sender === 'admin') {
+      try {
+        const farmer = await User.findById(advisory.userId);
+        if (farmer && farmer.fcmToken) {
+          const msg = {
+            token: farmer.fcmToken,
+            notification: { 
+              title: 'पिकांच्या डॉक्टरांचा रिप्लाय! 👨‍🌾', 
+              body: text ? text : 'तुम्हाला एक नवीन फोटो / मेसेज पाठवला आहे.' 
+            },
+            data: { 
+              route: '/crop-advisory',
+              type: 'CHAT'
+            },
+            android: { priority: 'high' }
+          };
+          await getMessaging().send(msg);
+        }
+      } catch (pushErr) {
+        console.error('Push Notif Error for Chat:', pushErr);
+      }
+    }
+
+    res.status(200).json({ success: true, message: "मेसेज पाठवला", data: advisory });
+  } catch (error) {
+    console.error("Message Error:", error);
+    res.status(500).json({ success: false, error: "Server Error" });
+  }
+});
+
+// ५. ॲडमिनने औषध सुचवणे (Final Resolve)
 router.put('/admin/resolve/:id', async (req, res) => {
   try {
     const { suggestedProducts, adminMessage } = req.body;
     
-    const updated = await CropAdvisory.findByIdAndUpdate(
-        req.params.id,
-        { status: 'Resolved', suggestedProducts, adminMessage },
-        { new: true }
-    );
-
-    if (!updated) {
+    const advisory = await CropAdvisory.findById(req.params.id);
+    if (!advisory) {
       return res.status(404).json({ success: false, error: "तक्रार सापडली नाही" });
     }
 
-    // १. डेटाबेसमध्ये इन-ॲप नोटिफिकेशन सेव्ह करणे
+    advisory.status = 'Resolved';
+    advisory.suggestedProducts = suggestedProducts;
+    advisory.adminMessage = adminMessage;
+
+    // फायनल सल्ला देखील चॅटमध्ये सेव्ह करून ठेवा जेणेकरून संभाषणाचा शेवट दिसेल
+    advisory.messages.push({
+      sender: 'admin',
+      text: `✅ तज्ज्ञांचा फायनल सल्ला: ${adminMessage || 'औषधे सुचवली आहेत.'}`
+    });
+
+    await advisory.save();
+
+    // इन-ॲप नोटिफिकेशन
     try {
       await Notification.create({
-        userId: updated.userId,
+        userId: advisory.userId,
         title: 'पिकांच्या डॉक्टरकडून सल्ला मिळाला! 🌱',
         message: 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे. पाहण्यासाठी क्लिक करा.',
         isRead: false
       });
-      console.log("✅ इन-ॲप नोटिफिकेशन डेटाबेसमध्ये सेव्ह झाली.");
     } catch (notifErr) {
-      console.error("❌ Notification creation error:", notifErr);
+      console.error("Notification creation error:", notifErr);
     }
 
-    // २. Firebase द्वारे मोबाईलवर पुश नोटिफिकेशन पाठवणे
+    // Firebase Push Notification
     try {
-      console.log("🔍 शेतकरी शोधत आहे User ID:", updated.userId);
-      const farmer = await User.findById(updated.userId);
-
+      const farmer = await User.findById(advisory.userId);
       if (farmer && farmer.fcmToken) {
-        // 🔴 पूर्णपणे अचूक आणि व्हॅलिड Payload (Unknown headers काढून टाकले आहे)
-       const message = {
+        const message = {
           token: farmer.fcmToken,
           notification: {
             title: 'पिकांच्या डॉक्टरकडून सल्ला! 🌱',
             body: adminMessage || 'तज्ज्ञांनी तुमच्या पिकावर योग्य औषध सुचवले आहे.'
           },
-          // 👉 Click kelyavar kontya route var jayche te sangnyasathi data block:
           data: {
             route: '/crop-advisory',
             type: 'ADVISORY',
-            advisoryId: updated._id.toString()
+            advisoryId: advisory._id.toString()
           },
           android: {
             priority: 'high',
             notification: {
               channelId: 'shahuraje_orders',
-              sound: 'default',
-              defaultSound: true,
-              defaultVibrateTimings: true,
-              priority: 'high'
+              sound: 'default'
             }
           }
         };
-
-        const response = await getMessaging().send(message);
-        console.log('🚀 Firebase Push यशस्वीरीत्या पाठवले! Response:', response);
-      } else {
-        console.warn('⚠️ या शेतकऱ्याच्या अकाउंटवर fcmToken सेव्ह केलेला नाही!');
+        await getMessaging().send(message);
       }
     } catch (pushErr) {
-      console.error('❌ Firebase Messaging Send मध्ये एरर आला:', pushErr);
+      console.error('Firebase Messaging Send Error:', pushErr);
     }
 
-    res.status(200).json({ success: true, message: "औषध सुचवले आणि नोटिफिकेशन पाठवली!", data: updated });
+    res.status(200).json({ success: true, message: "औषध सुचवले आणि नोटिफिकेशन पाठवली!", data: advisory });
   } catch (error) {
     console.error("Resolve Error:", error);
     res.status(500).json({ success: false, error: "Server Error" });

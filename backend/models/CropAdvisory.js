@@ -6,28 +6,27 @@ const cropAdvisorySchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  // हा सुरुवातीचा पहिला फोटो राहील
   image: {
     type: String,
     required: true
   },
-  description: {
-    type: String,
-    default: ''
-  },
   status: {
     type: String,
-    enum: ['Pending', 'Resolved'],
+    enum: ['Pending', 'In-Progress', 'Resolved'], // 'In-Progress' नवीन ॲड केला
     default: 'Pending'
   },
-  // 👉 एकापेक्षा जास्त औषधे साठवण्यासाठी Array केला आहे
   suggestedProducts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product'
   }],
-  adminMessage: {
-    type: String,
-    default: ''
-  }
+  // 👉 🔴 हा नवीन Chat Array: दोघांमधील संभाषण साठवण्यासाठी
+  messages: [{
+    sender: { type: String, enum: ['farmer', 'admin'], required: true },
+    text: { type: String, default: '' },
+    image: { type: String, default: null }, // चॅटमध्ये नवीन फोटो पाठवण्यासाठी
+    timestamp: { type: Date, default: Date.now }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('CropAdvisory', cropAdvisorySchema);
