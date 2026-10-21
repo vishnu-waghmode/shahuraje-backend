@@ -131,12 +131,19 @@ const CropAdvisory = () => {
     return [{ sender: 'farmer', text: query.description || 'तक्रार नोंदवली.', image: query.image, timestamp: query.createdAt }];
   };
 
+  // Back button handler for Chat Modal
+  const closeChat = () => {
+    setActiveChat(null);
+    setChatText('');
+    setChatImage(null);
+  };
+
   return (
     <IonPage>
       <IonContent className="bg-gray-50">
         <div className="w-full min-h-full flex flex-col pb-20">
           
-          <div className="bg-[#0c542b] text-white px-4 pt-8 pb-5 shadow-sm sticky top-0 z-20">
+          <div className="bg-[#0c542b] text-white px-4 pt-10 pb-5 shadow-sm sticky top-0 z-20">
             <div className="flex items-center gap-3">
               <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20"><ArrowLeft size={20} /></button>
               <div>
@@ -220,8 +227,11 @@ const CropAdvisory = () => {
       {/* 🔴 Full Screen Chat Modal */}
       {activeChat && (
         <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col">
-          <div className="bg-[#0c542b] text-white px-4 py-4 flex items-center gap-3 shadow-md z-10">
-            <button onClick={() => { setActiveChat(null); setChatText(''); setChatImage(null); }} className="p-1.5 bg-white/10 rounded-full active:bg-white/20"><ChevronLeft size={24} /></button>
+          {/* 👉 बदल १: Header ला वरून pt-10 ची padding दिली आहे जेणेकरून Notch च्या खाली दिसेल */}
+          <div className="bg-[#0c542b] text-white px-4 pt-10 pb-4 flex items-center gap-3 shadow-md z-10">
+            <button onClick={closeChat} className="p-1.5 bg-white/10 rounded-full active:bg-white/20 cursor-pointer">
+              <ChevronLeft size={24} />
+            </button>
             <div>
               <h2 className="text-base font-bold">कृषी तज्ज्ञ</h2>
               <p className="text-[10px] text-green-100">{activeChat.status === 'Resolved' ? 'समस्या सुटली (तरीही प्रश्न विचारू शकता)' : 'ऑनलाईन'}</p>
@@ -257,8 +267,8 @@ const CropAdvisory = () => {
             )}
           </div>
 
-          {/* 🔴 Chat Input (Nehami open rahil, resolved asle tri) */}
-          <div className="bg-white px-3 py-3 border-t border-gray-200 flex flex-col gap-2">
+          {/* 👉 बदल २: Chat Input ला खालून pb-8 ची padding दिली आहे जेणेकरून मोबाईलच्या बटन्सच्या वर दिसेल */}
+          <div className="bg-white px-3 pt-3 pb-8 border-t border-gray-200 flex flex-col gap-2">
             {chatImage && (
               <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 self-start ml-2 mb-1">
                 <img src={chatImage} alt="preview" className="w-full h-full object-cover" />
@@ -268,12 +278,10 @@ const CropAdvisory = () => {
 
             <div className="flex items-end gap-2">
               <div className="flex gap-1">
-                {/* 🔴 Direct Camera Button */}
                 <label className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full active:bg-emerald-100 cursor-pointer">
                   <Camera size={20} />
                   <input type="file" accept="image/*" capture="environment" onChange={handleChatImageChange} className="hidden" />
                 </label>
-                {/* 🔴 Gallery Button */}
                 <label className="p-2.5 bg-blue-50 text-blue-600 rounded-full active:bg-blue-100 cursor-pointer">
                   <ImageIcon size={20} />
                   <input type="file" accept="image/*" onChange={handleChatImageChange} className="hidden" />
