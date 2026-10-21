@@ -3,12 +3,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Gmail ट्रान्सपोर्टर
+// 🔴 Gmail अधिकृत सुरक्षित SMTP ट्रान्सपोर्टर
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // Port 465 साठी SSL
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -79,7 +84,12 @@ exports.loginUser = async (req, res) => {
 exports.sendOtp = async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!email) {
+            return res.status(400).json({ error: 'कृपया ईमेल आयडी प्रविष्ट करा.' });
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const user = await User.findOne({ email: cleanEmail });
         if (!user) {
             return res.status(404).json({ error: 'हा ईमेल आयडी अस्तित्वात नाही.' });
         }
@@ -107,9 +117,11 @@ exports.sendOtp = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
+        console.log(`✅ OTP यशस्वीरीत्या पाठवला: ${user.email}`);
         res.status(200).json({ message: 'OTP तुमच्या ईमेलवर पाठवला गेला आहे!' });
 
     } catch (error) {
+        console.error('❌ ईमेल पाठवताना एरर:', error);
         res.status(500).json({ error: 'ईमेल पाठवताना एरर आला', details: error.message });
     }
 };
@@ -119,9 +131,12 @@ exports.resetPasswordWithOtp = async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
 
+        const cleanEmail = email ? email.trim().toLowerCase() : '';
+        const cleanOtp = otp ? otp.trim() : '';
+
         const user = await User.findOne({
-            email: email.toLowerCase(),
-            resetOtp: otp,
+            email: cleanEmail,
+            resetOtp: cleanOtp,
             resetOtpExpire: { $gt: Date.now() }
         });
 

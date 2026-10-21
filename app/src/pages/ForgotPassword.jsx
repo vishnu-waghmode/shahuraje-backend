@@ -13,21 +13,21 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
 
- // स्टेप १: OTP पाठवणे (टाईमआउटसह)
+  // स्टेप १: OTP पाठवणे (६० सेकंदांचा सेफ टाईमआउट)
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMsg({ type: '', text: '' });
 
-    // १५ सेकंदाचा टाईमआउट सेट करणे, जेणेकरून ॲप अडकून पडणार नाही
+    // 🔴 ६० सेकंदांचा टाईमआउट (Render स्लीप मोडमधून चालू होण्यासाठी आवश्यक वेळ)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
       const res = await fetch('https://shahuraje-backend-1.onrender.com/api/users/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
         signal: controller.signal
       });
       
@@ -36,15 +36,15 @@ const ForgotPassword = () => {
       
       if (res.ok) {
         setStep(2);
-        setMsg({ type: 'success', text: 'OTP तुमच्या ईमेलवर पाठवला आहे!' });
+        setMsg({ type: 'success', text: 'OTP तुमच्या ईमेलवर यशस्वीरीत्या पाठवला आहे!' });
       } else {
         setMsg({ type: 'error', text: data.error || 'अडचण आली.' });
       }
     } catch (err) {
       if (err.name === 'AbortError') {
-        setMsg({ type: 'error', text: 'सर्व्हरकडून रिस्पॉन्स मिळायला वेळ लागत आहे. कृपया पुन्हा प्रयत्न करा.' });
+        setMsg({ type: 'error', text: 'सर्व्हर चालू व्हायला वेळ लागत आहे. कृपया १ मिनिट थांबून पुन्हा प्रयत्न करा.' });
       } else {
-        setMsg({ type: 'error', text: 'सर्व्हरशी संपर्क होऊ शकला नाही.' });
+        setMsg({ type: 'error', text: 'सर्व्हरशी संपर्क होऊ शकला नाही. इंटरनेट तपासा.' });
       }
     } finally {
       setLoading(false);
@@ -61,7 +61,7 @@ const ForgotPassword = () => {
       const res = await fetch('https://shahuraje-backend-1.onrender.com/api/users/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword })
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp: otp.trim(), newPassword })
       });
       const data = await res.json();
       if (res.ok) {
