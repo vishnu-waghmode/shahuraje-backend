@@ -3,18 +3,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// 🔴 Gmail अधिकृत सुरक्षित SMTP ट्रान्सपोर्टर
+// 🔴 Port 587 + STARTTLS (Render आणि क्लाऊड सर्व्हरवर अडकून पडत नाही)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Port 465 साठी SSL
+    port: 587,
+    secure: false, // 587 साठी false असणे आवश्यक
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     tls: {
         rejectUnauthorized: false
-    }
+    },
+    connectionTimeout: 10000, // १० सेकंदांत कनेक्ट झाले नाही तर लगेच एरर देईल (हँग होणार नाही)
+    greetingTimeout: 10000,
+    socketTimeout: 15000
 });
 
 // १. युजर रजिस्ट्रेशन
@@ -80,8 +83,9 @@ exports.loginUser = async (req, res) => {
     }
 };
 
-// ३. OTP पाठवणे (Forgot Password)
+// ३. OTP पाठवणे (Forgot Password) 🔴
 exports.sendOtp = async (req, res) => {
+    console.log("👉 /send-otp API कॉल झाली! आलेली माहिती:", req.body);
     try {
         const { email } = req.body;
         if (!email) {
@@ -89,8 +93,11 @@ exports.sendOtp = async (req, res) => {
         }
 
         const cleanEmail = email.trim().toLowerCase();
+        console.log("👉 शोधत असलेला ईमेल:", cleanEmail);
+
         const user = await User.findOne({ email: cleanEmail });
         if (!user) {
+            console.log("❌ युझर डेटाबेसमध्ये सापडला नाही:", cleanEmail);
             return res.status(404).json({ error: 'हा ईमेल आयडी अस्तित्वात नाही.' });
         }
 
@@ -98,6 +105,7 @@ exports.sendOtp = async (req, res) => {
         user.resetOtp = otp;
         user.resetOtpExpire = Date.now() + 10 * 60 * 1000; // १० मिनिटे
         await user.save();
+        console.log("👉 OTP डेटाबेसमध्ये सेव्ह झाला:", otp);
 
         const mailOptions = {
             from: `"शाहूराजे कृषी केंद्र" <${process.env.EMAIL_USER}>`,
@@ -116,13 +124,15 @@ exports.sendOtp = async (req, res) => {
             `
         };
 
+        console.log("👉 Gmail SMTP ला ईमेल पाठवत आहे...");
         await transporter.sendMail(mailOptions);
         console.log(`✅ OTP यशस्वीरीत्या पाठवला: ${user.email}`);
-        res.status(200).json({ message: 'OTP तुमच्या ईमेलवर पाठवला गेला आहे!' });
+        
+        return res.status(200).json({ message: 'OTP तुमच्या ईमेलवर पाठवला गेला आहे!' });
 
     } catch (error) {
-        console.error('❌ ईमेल पाठवताना एरर:', error);
-        res.status(500).json({ error: 'ईमेल पाठवताना एरर आला', details: error.message });
+        console.error('❌ ईमेल पाठवताना त्रुटी (Nodemailer Error):', error);
+        return res.status(500).json({ error: 'ईमेल पाठवताना एरर आला: ' + error.message });
     }
 };
 
