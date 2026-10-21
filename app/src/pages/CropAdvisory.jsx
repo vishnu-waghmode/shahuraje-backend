@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+import { IonPage, IonContent, IonModal } from '@ionic/react'; // 🔴 IonModal import kela ahe
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Image as ImageIcon, Send, Clock, CheckCircle, AlertCircle, Leaf, X, Loader2, MessageSquare, ChevronLeft } from 'lucide-react';
 
@@ -131,11 +131,12 @@ const CropAdvisory = () => {
     return [{ sender: 'farmer', text: query.description || 'तक्रार नोंदवली.', image: query.image, timestamp: query.createdAt }];
   };
 
-  // Back button handler for Chat Modal
+  // 🔴 Chat close karnyache function
   const closeChat = () => {
     setActiveChat(null);
     setChatText('');
     setChatImage(null);
+    setChatImageBase64(null);
   };
 
   return (
@@ -224,90 +225,94 @@ const CropAdvisory = () => {
         </div>
       </IonContent>
 
-      {/* 🔴 Full Screen Chat Modal */}
-      {activeChat && (
-        <div className="fixed inset-0 z-50 bg-gray-50 flex flex-col">
-          {/* 👉 बदल १: Header ला वरून pt-10 ची padding दिली आहे जेणेकरून Notch च्या खाली दिसेल */}
-          <div className="bg-[#0c542b] text-white px-4 pt-10 pb-4 flex items-center gap-3 shadow-md z-10">
-            <button onClick={closeChat} className="p-1.5 bg-white/10 rounded-full active:bg-white/20 cursor-pointer">
-              <ChevronLeft size={24} />
-            </button>
-            <div>
-              <h2 className="text-base font-bold">कृषी तज्ज्ञ</h2>
-              <p className="text-[10px] text-green-100">{activeChat.status === 'Resolved' ? 'समस्या सुटली (तरीही प्रश्न विचारू शकता)' : 'ऑनलाईन'}</p>
+      {/* 🔴 IonModal: Hardware Back Button sathi */}
+      <IonModal isOpen={!!activeChat} onDidDismiss={closeChat}>
+        {activeChat && (
+          <div className="w-full h-full bg-gray-50 flex flex-col">
+            
+            {/* Header: Varun pt-12 chi padding dili ahe (Notch sathi) */}
+            <div className="bg-[#0c542b] text-white px-4 pt-12 pb-4 flex items-center gap-3 shadow-md z-10">
+              <button onClick={closeChat} className="p-1.5 bg-white/10 rounded-full active:bg-white/20 cursor-pointer">
+                <ChevronLeft size={24} />
+              </button>
+              <div>
+                <h2 className="text-base font-bold">कृषी तज्ज्ञ</h2>
+                <p className="text-[10px] text-green-100">{activeChat.status === 'Resolved' ? 'समस्या सुटली (तरीही प्रश्न विचारू शकता)' : 'ऑनलाईन'}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatScrollRef}>
-            {getMessages(activeChat).map((msg, idx) => {
-              const isFarmer = msg.sender === 'farmer';
-              return (
-                <div key={idx} className={`flex ${isFarmer ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-2xl ${isFarmer ? 'bg-[#0c542b] text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'}`}>
-                    {msg.image && <img src={msg.image} alt="attachment" className="w-full max-h-48 object-cover rounded-xl mb-2" onClick={() => window.open(msg.image, '_blank')} />}
-                    {msg.text && <p className="text-[13px] leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
-                    <span className={`text-[9px] block mt-1.5 text-right ${isFarmer ? 'text-green-200' : 'text-gray-400'}`}>{formatDate(msg.timestamp || Date.now())}</span>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatScrollRef}>
+              {getMessages(activeChat).map((msg, idx) => {
+                const isFarmer = msg.sender === 'farmer';
+                return (
+                  <div key={idx} className={`flex ${isFarmer ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] p-3 rounded-2xl ${isFarmer ? 'bg-[#0c542b] text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'}`}>
+                      {msg.image && <img src={msg.image} alt="attachment" className="w-full max-h-48 object-cover rounded-xl mb-2" onClick={() => window.open(msg.image, '_blank')} />}
+                      {msg.text && <p className="text-[13px] leading-relaxed whitespace-pre-wrap">{msg.text}</p>}
+                      <span className={`text-[9px] block mt-1.5 text-right ${isFarmer ? 'text-green-200' : 'text-gray-400'}`}>{formatDate(msg.timestamp || Date.now())}</span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {activeChat.status === 'Resolved' && activeChat.suggestedProducts && activeChat.suggestedProducts.length > 0 && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] bg-green-50 border border-green-200 p-3 rounded-2xl rounded-tl-sm">
+                    <p className="text-[11px] font-bold text-green-800 mb-2">सुचवलेली औषधे (खरेदीसाठी उपलब्ध):</p>
+                    {activeChat.suggestedProducts.map((prod, idx) => (
+                      <div key={idx} className="bg-white p-2 mb-1.5 rounded-lg border border-green-100 flex justify-between items-center shadow-xs">
+                        <span className="font-bold text-[11px] text-green-900">{prod.name}</span>
+                        <button onClick={() => { closeChat(); navigate('/product-detail', { state: { product: prod } }); }} className="bg-[#0c542b] text-white text-[9px] px-2.5 py-1 rounded">पहा</button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
-
-            {activeChat.status === 'Resolved' && activeChat.suggestedProducts && activeChat.suggestedProducts.length > 0 && (
-              <div className="flex justify-start">
-                <div className="max-w-[85%] bg-green-50 border border-green-200 p-3 rounded-2xl rounded-tl-sm">
-                  <p className="text-[11px] font-bold text-green-800 mb-2">सुचवलेली औषधे (खरेदीसाठी उपलब्ध):</p>
-                  {activeChat.suggestedProducts.map((prod, idx) => (
-                    <div key={idx} className="bg-white p-2 mb-1.5 rounded-lg border border-green-100 flex justify-between items-center shadow-xs">
-                      <span className="font-bold text-[11px] text-green-900">{prod.name}</span>
-                      <button onClick={() => navigate('/product-detail', { state: { product: prod } })} className="bg-[#0c542b] text-white text-[9px] px-2.5 py-1 rounded">पहा</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 👉 बदल २: Chat Input ला खालून pb-8 ची padding दिली आहे जेणेकरून मोबाईलच्या बटन्सच्या वर दिसेल */}
-          <div className="bg-white px-3 pt-3 pb-8 border-t border-gray-200 flex flex-col gap-2">
-            {chatImage && (
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 self-start ml-2 mb-1">
-                <img src={chatImage} alt="preview" className="w-full h-full object-cover" />
-                <button onClick={() => { setChatImage(null); setChatImageBase64(null); }} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"><X size={12} /></button>
-              </div>
-            )}
-
-            <div className="flex items-end gap-2">
-              <div className="flex gap-1">
-                <label className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full active:bg-emerald-100 cursor-pointer">
-                  <Camera size={20} />
-                  <input type="file" accept="image/*" capture="environment" onChange={handleChatImageChange} className="hidden" />
-                </label>
-                <label className="p-2.5 bg-blue-50 text-blue-600 rounded-full active:bg-blue-100 cursor-pointer">
-                  <ImageIcon size={20} />
-                  <input type="file" accept="image/*" onChange={handleChatImageChange} className="hidden" />
-                </label>
-              </div>
-              
-              <textarea 
-                rows={1}
-                value={chatText}
-                onChange={(e) => setChatText(e.target.value)}
-                placeholder="रिप्लाय द्या..."
-                className="flex-1 bg-gray-100 rounded-2xl px-4 py-3 text-sm outline-none max-h-24 resize-none"
-              />
-              
-              <button 
-                onClick={handleSendReply}
-                disabled={chatLoading || (!chatText.trim() && !chatImage)}
-                className={`p-3 rounded-full flex items-center justify-center transition-all ${chatLoading || (!chatText.trim() && !chatImage) ? 'bg-gray-200 text-gray-400' : 'bg-[#0c542b] text-white active:scale-95'}`}
-              >
-                {chatLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="ml-1" />}
-              </button>
+              )}
             </div>
-          </div>
 
-        </div>
-      )}
+            {/* Chat Input Area: Khalun pb-8 chi padding dili ahe (Mobile Buttons sathi) */}
+            <div className="bg-white px-3 pt-3 pb-8 border-t border-gray-200 flex flex-col gap-2">
+              {chatImage && (
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 self-start ml-2 mb-1">
+                  <img src={chatImage} alt="preview" className="w-full h-full object-cover" />
+                  <button onClick={() => { setChatImage(null); setChatImageBase64(null); }} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"><X size={12} /></button>
+                </div>
+              )}
+
+              <div className="flex items-end gap-2">
+                <div className="flex gap-1">
+                  <label className="p-2.5 bg-emerald-50 text-emerald-600 rounded-full active:bg-emerald-100 cursor-pointer">
+                    <Camera size={20} />
+                    <input type="file" accept="image/*" capture="environment" onChange={handleChatImageChange} className="hidden" />
+                  </label>
+                  <label className="p-2.5 bg-blue-50 text-blue-600 rounded-full active:bg-blue-100 cursor-pointer">
+                    <ImageIcon size={20} />
+                    <input type="file" accept="image/*" onChange={handleChatImageChange} className="hidden" />
+                  </label>
+                </div>
+                
+                <textarea 
+                  rows={1}
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  placeholder="रिप्लाय द्या..."
+                  className="flex-1 bg-gray-100 rounded-2xl px-4 py-3 text-sm outline-none max-h-24 resize-none"
+                />
+                
+                <button 
+                  onClick={handleSendReply}
+                  disabled={chatLoading || (!chatText.trim() && !chatImage)}
+                  className={`p-3 rounded-full flex items-center justify-center transition-all ${chatLoading || (!chatText.trim() && !chatImage) ? 'bg-gray-200 text-gray-400' : 'bg-[#0c542b] text-white active:scale-95'}`}
+                >
+                  {chatLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="ml-1" />}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </IonModal>
+
     </IonPage>
   );
 };
