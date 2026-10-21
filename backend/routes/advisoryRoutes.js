@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { getMessaging } = require('firebase-admin/messaging'); 
 const cloudinary = require('cloudinary').v2;
 
+// Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -39,6 +40,7 @@ router.post('/create', async (req, res) => {
 
     await newAdvisory.save();
 
+    // ॲडमिनला नोटिफिकेशन
     try {
       await Notification.create({
         userId: null, 
@@ -109,8 +111,14 @@ router.post('/message/:id', async (req, res) => {
       image: imageUrl
     });
 
-    // जर ॲडमिनने पहिला रिप्लाय दिला, तर स्टेट्स 'Pending' वरून 'In-Progress' करा
+    // 🔴 ॲडमिनने पहिला रिप्लाय दिला, तर स्टेट्स 'Pending' वरून 'In-Progress' करा
     if (sender === 'admin' && advisory.status === 'Pending') {
+      advisory.status = 'In-Progress';
+    }
+    
+    // 🔴 जर शेतकऱ्याने पुन्हा रिप्लाय दिला (समस्या सोडवल्यानंतरही) आणि स्टेटस Resolved असेल, 
+    // तर ते पुन्हा 'In-Progress' करा म्हणजे ॲडमिनला पुन्हा ते डॅशबोर्डवर दिसेल.
+    if (sender === 'farmer' && advisory.status === 'Resolved') {
       advisory.status = 'In-Progress';
     }
 
