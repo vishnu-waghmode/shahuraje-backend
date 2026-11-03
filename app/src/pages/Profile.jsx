@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, MapPin, Globe, HelpCircle, FileText, LogOut, ChevronRight, 
@@ -19,8 +20,8 @@ const Profile = () => {
     initials: 'SM'
   });
 
-  // localStorage मधून लॉगिन युझरची माहिती आणणे
-  useEffect(() => {
+  // localStorage मधून लॉगिन युझरची माहिती आणणारे फंक्शन
+  const fetchUserData = () => {
     try {
       const savedUser = localStorage.getItem('user');
       if (savedUser) {
@@ -45,7 +46,25 @@ const Profile = () => {
     } catch (e) {
       console.error('Error reading user data:', e);
     }
+  };
+
+  useEffect(() => {
+    fetchUserData();
   }, []);
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      fetchUserData();
+      // थोडा वेळ थांबून रिफ्रेश फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   // प्रोफाईल मेनू ऑप्शन्स
   const menuOptions = [
@@ -68,6 +87,15 @@ const Profile = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="प्रोफाईल अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-32">
           
           {/* १. टॉप हेडर */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Star, ShieldCheck, Truck, Plus, Minus } from 'lucide-react';
 import { useCart } from '../CartContext';
@@ -20,6 +21,19 @@ const ProductDetail = () => {
       setProduct(passedProduct);
     }
   }, [passedProduct]);
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // प्रॉडक्ट माहिती स्टेटमधून येत असल्याने इथे फक्त रिफ्रेशचा फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   const increaseQty = () => setQuantity(prev => prev + 1);
   const decreaseQty = () => setQuantity(prev => (quantity > 1 ? prev - 1 : 1));
@@ -67,6 +81,15 @@ const ProductDetail = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="प्रॉडक्ट माहिती अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col justify-between pb-24">
 
           {/* १. टॉप हेडर (Back Button & Cart) */}

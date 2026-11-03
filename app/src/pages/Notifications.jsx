@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Bell, Package, Clock, Stethoscope } from 'lucide-react';
 
@@ -43,6 +44,30 @@ const Notifications = () => {
     }
   };
 
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      if (userId) {
+        const response = await fetch(`${API_BASE_URL}/api/notifications/${userId}`);
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          setNotifications(data.notifications || []);
+          
+          // बॅज क्लिअर करण्यासाठी परत कॉल करणे
+          await fetch(`${API_BASE_URL}/api/notifications/mark-all-read/${userId}`, {
+            method: 'PUT'
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
+
   // नोटिफिकेशनवर क्लिक केल्यावर योग्य पेजवर जाणे
   const handleNotificationClick = (notif) => {
     const titleText = (notif.title || '').toLowerCase();
@@ -66,6 +91,15 @@ const Notifications = () => {
   return (
     <IonPage>
       <IonContent className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="नोटिफिकेशन्स अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full pb-20">
           
           <div 

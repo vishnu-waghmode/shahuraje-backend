@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; 
 import { checkHasMpin, unlockApp } from '../mpinStorage';
-
-// 🔴 बदल १: PushNotifications इम्पोर्ट करा
 import { PushNotifications } from '@capacitor/push-notifications';
 
 const Login = () => {
@@ -17,7 +16,7 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Page उघडताच आधी सेव्ह केलेले Credentials चेक करणे
-  useEffect(() => {
+  const checkSavedCredentials = () => {
     const savedEmail = localStorage.getItem('remembered_email');
     const savedPassword = localStorage.getItem('remembered_password');
     if (savedEmail && savedPassword) {
@@ -25,9 +24,28 @@ const Login = () => {
       setPassword(savedPassword);
       setRememberMe(true);
     }
+  };
+
+  useEffect(() => {
+    checkSavedCredentials();
   }, []);
 
-  // 🔴 बदल २: FCM Token अपडेट करणारे फंक्शन जोडा
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // रिफ्रेश केल्यावर सेव्ह केलेले डिटेल्स पुन्हा चेक करा
+      checkSavedCredentials();
+      // थोडा वेळ थांबून रिफ्रेश फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
+
+  // FCM Token अपडेट करणारे फंक्शन
   const updateFcmToken = async (userId) => {
     try {
       let permStatus = await PushNotifications.checkPermissions();
@@ -45,7 +63,7 @@ const Login = () => {
       PushNotifications.addListener('registration', async (token) => {
         console.log('नवीन FCM Token मिळाला: ', token.value);
         
-        // तुझ्या Backend ला टोकन पाठव
+        // Backend ला टोकन पाठवणे
         await fetch(`https://shahuraje-backend-1.onrender.com/api/users/update-fcm-token/${userId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -85,7 +103,7 @@ const Login = () => {
           localStorage.removeItem('remembered_password');
         }
 
-        // 🔴 बदल ३: डॅशबोर्डवर जाण्यापूर्वी FCM Token अपडेट करा
+        // डॅशबोर्डवर जाण्यापूर्वी FCM Token अपडेट करा
         const userId = data.user._id || data.user.id;
         updateFcmToken(userId);
 
@@ -122,6 +140,15 @@ const Login = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-white">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="पेज अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full h-full flex flex-col justify-between px-6 py-8 overflow-y-auto">
           
           {/* शीर्ष भाग: Shahuraje Brand Logo */}

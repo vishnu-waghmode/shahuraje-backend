@@ -1,5 +1,6 @@
 import React from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trash2, Plus, Minus, Home as HomeIcon, Package, ShoppingCart, User, Camera } from 'lucide-react';
 import { useCart } from '../CartContext'; 
@@ -11,6 +12,19 @@ const Cart = () => {
   const deliveryFee = 40;
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal > 0 ? subtotal + deliveryFee : 0;
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // कार्ट डेटा Local Context/State मध्ये असल्यामुळे फक्त थोडा वेळ थांबून रिफ्रेश फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   const handleCheckoutClick = () => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -31,6 +45,15 @@ const Cart = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="कार्ट अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-48">
           
           <div 

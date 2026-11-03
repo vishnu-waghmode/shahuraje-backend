@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, Cloud, CloudRain, Sun, CloudSun, Droplets, 
@@ -24,8 +25,11 @@ const WeatherDetail = () => {
     return <Sun size={size} className="text-amber-400 drop-shadow" />;
   };
 
-  useEffect(() => {
-    // १. अक्षांश-रेखांशावरून चालू गावाचे/शहराचे नाव शोधणे (Live Reverse Geocoding)
+  // 👉 बदल २: डेटा मिळवण्याचा कोड एका फंक्शनमध्ये टाकला (जेणेकरून Refresh करताना वापरता येईल)
+  const fetchWeatherData = (event = null) => {
+    if (!event) setLoading(true); // फक्त पहिल्यांदा लोड करताना लोडर दाखवा
+
+    // १. अक्षांश-रेखांशावरून चालू गावाचे/शहराचे नाव शोधणे
     const fetchCityName = async (lat, lon) => {
       try {
         const geoRes = await fetch(
@@ -52,10 +56,11 @@ const WeatherDetail = () => {
         const res = await fetch(url);
         const data = await res.json();
         setWeatherData(data);
-        setLoading(false);
       } catch (err) {
         console.error('Weather error:', err);
-        setLoading(false);
+      } finally {
+        if (!event) setLoading(false);
+        if (event) event.detail.complete(); // 🔴 रिफ्रेश फिरणारा गोल थांबवणे
       }
     };
 
@@ -76,7 +81,16 @@ const WeatherDetail = () => {
       fetchCityName(18.9894, 73.1175);
       fetchFullWeather(18.9894, 73.1175);
     }
+  };
+
+  useEffect(() => {
+    fetchWeatherData();
   }, []);
+
+  // 👉 Pull-to-Refresh हँडलर
+  const handleRefresh = (event) => {
+    fetchWeatherData(event);
+  };
 
   const currentWeather = passedWeather || weatherData?.current; 
   const isRaining = Boolean(
@@ -87,9 +101,9 @@ const WeatherDetail = () => {
     )
   );
 
-// const isRaining = true;
+  // const isRaining = true;
 
-// पारदर्शक आणि 100% काम करणाऱ्या पीएनजी इमेजेस
+  // पारदर्शक आणि 100% काम करणाऱ्या पीएनजी इमेजेस
   const girlNormalModel = "https://png.pngtree.com/png-clipart/20230913/original/pngtree-girl-walking-png-image_11068832.png";
   const girlRainModel = "https://png.pngtree.com/png-clipart/20230913/original/pngtree-rain-girl-umbrella-png-image_11068835.png";
 
@@ -132,6 +146,15 @@ const WeatherDetail = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="no-scroll">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="हवामान अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-screen relative overflow-y-auto pb-14 text-white select-none bg-gradient-to-b from-[#3a5d70] via-[#244550] to-[#12282e]">
           
           {/* १. निसर्गरम्य पार्श्वभूमी आणि थेट चालत येणारी मुलगी */}
@@ -164,23 +187,24 @@ const WeatherDetail = () => {
               </div>
             )}
 
-         {/* 🔥 उजवीकडून चालत येणारी, मध्ये थांबून पाहणारी थेट ॲनिमेटेड मुलगी (Real Walking GIF) */}
+            {/* 🔥 उजवीकडून चालत येणारी, मध्ये थांबून पाहणारी थेट ॲनिमेटेड मुलगी (Real Walking GIF) */}
             <div className="absolute right-2 bottom-0 z-10 w-44 h-64 flex items-end justify-center pointer-events-none animate-girl-walk">
-            <img 
-              src={isRaining 
-               ? "https://media.tenor.com/e5B3K314zocAAAAC/girl-rain.gif" 
-                : "https://media.tenor.com/yFhH8w82n_4AAAAC/walk-girl.gif"
-        } 
-            alt="Walking Girl"
-             className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]"
-             onError={(e) => {
-      // बॅकअप लिंक (जर Tenor ब्लॉक झाले तर Giphy चालते)
-         e.target.src = isRaining 
-          ? "https://media.giphy.com/media/l41JRsph73VokN6ik/giphy.gif"
-       : "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif";
-          }}
-          />
-         </div>
+              <img 
+                src={isRaining 
+                  ? "https://media.tenor.com/e5B3K314zocAAAAC/girl-rain.gif" 
+                  : "https://media.tenor.com/yFhH8w82n_4AAAAC/walk-girl.gif"
+                } 
+                alt="Walking Girl"
+                className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]"
+                onError={(e) => {
+                  // बॅकअप लिंक (जर Tenor ब्लॉक झाले तर Giphy चालते)
+                  e.target.src = isRaining 
+                    ? "https://media.giphy.com/media/l41JRsph73VokN6ik/giphy.gif"
+                    : "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif";
+                }}
+              />
+            </div>
+
             {/* ग्रेडियंट शेड */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-[#12282e] z-0"></div>
 

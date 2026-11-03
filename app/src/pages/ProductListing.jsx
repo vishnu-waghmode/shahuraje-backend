@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, ShoppingCart, Star, Plus, SlidersHorizontal } from 'lucide-react';
 
@@ -30,21 +31,36 @@ const ProductListing = () => {
   const categoriesList = ['सर्व', 'कीटकनाशक', 'खते', 'बियाणे', 'सिंचन'];
 
   // बॅकएंडवरून उत्पादने मिळवणे
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('https://shahuraje-backend-1.onrender.com/api/products');
-        const data = await response.json();
-        setProducts(data);
-        setLoading(false);
-      } catch (error) {
-        console.error('प्रॉडक्ट्स लोड करताना एरर आला:', error);
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('https://shahuraje-backend-1.onrender.com/api/products');
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('प्रॉडक्ट्स लोड करताना एरर आला:', error);
+    }
+  };
 
-    fetchProducts();
+  useEffect(() => {
+    const loadInitialProducts = async () => {
+      setLoading(true);
+      await fetchProducts();
+      setLoading(false);
+    };
+    loadInitialProducts();
   }, []);
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      await fetchProducts();
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   // ऑटोमॅटिक कॅटेगरी शोधणे आणि स्क्रोल करणे
   useEffect(() => {
@@ -95,6 +111,15 @@ const ProductListing = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="उत्पादने अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-10">
           
           {/* १. टॉप हेडर */}
@@ -180,7 +205,7 @@ const ProductListing = () => {
               ))}
             </div>
 
-            {/* ४. उत्पादने ग्रिड */}
+            {/* ۴. उत्पादने ग्रिड */}
             {loading ? (
               <div className="flex justify-center py-12">
                 <span className="text-sm font-bold text-[#0c542b]">उत्पादने लोड होत आहेत...</span>

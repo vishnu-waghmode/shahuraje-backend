@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { IonPage, IonContent, useIonViewWillEnter } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, useIonViewWillEnter, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Package, Truck, CheckCircle2, Phone, MapPin, RefreshCw, Bell } from 'lucide-react';
 
@@ -17,7 +18,7 @@ const DeliveryDashboard = () => {
   const deliveryBoyId = user._id || user.id;
 
   // १. डॅशबोर्ड डेटा आणणे आणि नोटिफिकेशन बॅज लगेच क्लिअर करणे 🔴
-  const loadDashboardData = useCallback(async () => {
+  const loadDashboardData = useCallback(async (showLoader = true) => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentBoyId = currentUser._id || currentUser.id;
 
@@ -27,7 +28,7 @@ const DeliveryDashboard = () => {
     }
 
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
 
       // 👉 स्क्रीन उघडताच सर्वात आधी UI वरील लाल बॅज लगेच ० करा
       setUnreadCount(0);
@@ -45,7 +46,7 @@ const DeliveryDashboard = () => {
     } catch (err) {
       console.error("Dashboard auto-reload error:", err);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   }, []);
 
@@ -58,6 +59,19 @@ const DeliveryDashboard = () => {
   useEffect(() => {
     loadDashboardData();
   }, [location.key, loadDashboardData]);
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // मॅन्युअल रिफ्रेश करताना मुख्य लोडर लपवा (false पाठवले आहे)
+      await loadDashboardData(false);
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   // ४. स्टेटस अपडेट करणे (Picked Up / Delivered)
   const handleUpdateStatus = (orderId, newStatus) => {
@@ -99,6 +113,15 @@ const DeliveryDashboard = () => {
   return (
     <IonPage>
       <IonContent className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="ऑर्डर्स अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-20">
           
           {/* Header */}
@@ -125,7 +148,7 @@ const DeliveryDashboard = () => {
 
               {/* Refresh Button */}
               <button 
-                onClick={loadDashboardData}
+                onClick={() => loadDashboardData(true)}
                 className="p-2 bg-white/10 rounded-full hover:bg-white/20 active:scale-95 transition-all text-white"
                 title="Refresh Orders"
               >

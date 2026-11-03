@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, MapPin, Phone, User, CreditCard, Banknote, ShieldCheck, Loader2 } from 'lucide-react';
 import { useCart } from '../CartContext';
@@ -35,6 +36,24 @@ const Checkout = () => {
       }
     }
   }, []);
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // चेकआउटवर रिफ्रेश केल्यावर सेव्ह केलेला पत्ता पुन्हा फेच करा
+      const savedAddress = localStorage.getItem('savedDeliveryAddress');
+      if (savedAddress) {
+        setAddress(JSON.parse(savedAddress));
+      }
+      // थोडा वेळ थांबून रिफ्रेश फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -210,7 +229,7 @@ const Checkout = () => {
 
     setLoading(true);
 
-    const fullDeliveryAddress = `${address.fullName}, ${address.phone}, ${address.fullAddress}, ${address.village} - ${address.pincode}`;
+    const fullDeliveryAddress = `${address.fullName}, ${address.phone}, ${address.fullAddress}, ${address.village}\n${address.pincode}`;
 
     const orderData = {
       userId: user.id || user._id,
@@ -245,6 +264,15 @@ const Checkout = () => {
   return (
     <IonPage>
       <IonContent className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="चेकआउट अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-32">
           
           <div className="bg-white px-4 pb-3 shadow-sm sticky top-0 z-20 flex items-center space-x-3 pt-6">

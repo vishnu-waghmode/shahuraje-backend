@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'; 
 
@@ -13,6 +14,26 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      // रिफ्रेश केल्यावर फॉर्ममधील सर्व माहिती आणि एरर क्लिअर करा
+      setName('');
+      setEmail('');
+      setPhone('');
+      setPassword('');
+      setErrorMsg('');
+      
+      // थोडा वेळ थांबून रिफ्रेश फील द्या
+      await new Promise(resolve => setTimeout(resolve, 600));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -50,6 +71,15 @@ const Register = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-white">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="फॉर्म रिफ्रेश करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full h-full flex flex-col justify-between px-6 py-6 overflow-y-auto">
           
           <div>

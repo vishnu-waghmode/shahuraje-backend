@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 बदल १: IonRefresher आणि IonRefresherContent इम्पोर्ट केले
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -56,7 +57,7 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  // 🔴 ३. ऑर्डर्स पेज उघडताच सर्व नोटिफिकेशन्स 'Read' करणे (Bell Icon वरील लाल बॅज लगेच काढण्यासाठी)
+  // 🔴 ३. ऑर्डर्स पेज उघडताच सर्व नोटिफिकेशन्स 'Read' करणे
   useEffect(() => {
     const clearNotificationBadge = async () => {
       try {
@@ -76,6 +77,28 @@ const Orders = () => {
     clearNotificationBadge();
   }, []);
 
+  // 👉 बदल २: Pull-to-Refresh हँडल करणारे फंक्शन
+  const handleRefresh = async (event) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const userId = user?.id || user?._id;
+      
+      if (userId) {
+        const response = await fetch(`${API_BASE_URL}/api/orders/user/${userId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setMyOrders(Array.isArray(data) ? data : data.orders || []);
+        }
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // 🔴 लोडिंग फिरणारा गोल थांबवणे
+      event.detail.complete();
+    }
+  };
+
   // ४. टॅबनुसार फिल्टर करणे
   const filteredOrders = myOrders.filter(order => {
     if (activeTab === 'सर्व') return true;
@@ -94,6 +117,15 @@ const Orders = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 बदल ३: IonRefresher Component (IonContent च्या आत सर्वात वर) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="ऑर्डर्स अपडेट करत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-32">
           
           <div 
