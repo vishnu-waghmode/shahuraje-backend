@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, AlertTriangle, CheckCircle2, Link as LinkIcon, UploadCloud } from 'lucide-react';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -11,6 +11,9 @@ const Products = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
+  
+  // 👉 फोटो इनपुटचा प्रकार ठरवण्यासाठी स्टेट (url किंवा upload)
+  const [imageInputType, setImageInputType] = useState('url');
 
   const [formData, setFormData] = useState({
     name: '', category: '', price: '', mrp: '', stock: '', image: ''
@@ -22,7 +25,7 @@ const Products = () => {
     setShowToast(true);
     setTimeout(() => {
       setShowToast(false);
-    }, 3000); // ३ सेकंदांनंतर आपोआप टोस्ट बंद होईल
+    }, 3000); 
   };
 
   // सर्व उत्पादने आणणे
@@ -44,6 +47,7 @@ const Products = () => {
     setIsModalOpen(false);
     setEditId(null);
     setFormData({ name: '', category: '', price: '', mrp: '', stock: '', image: '' });
+    setImageInputType('url'); // डिफॉल्ट URL सेट करा
   };
 
   const handleEditClick = (product) => {
@@ -56,13 +60,31 @@ const Products = () => {
       stock: product.stock,
       image: product.image || ''
     });
+    // जर जुना इमेज Base64 असेल, तर Upload टॅब दाखवा, नाहीतर URL टॅब
+    setImageInputType(product.image?.startsWith('data:image') ? 'upload' : 'url');
     setIsModalOpen(true);
+  };
+
+  // 👉 लोकल फाईल अपलोड हँडलर (Convert to Base64)
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result }); // Base64 स्ट्रिंग सेव्ह होईल
+      };
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.image) {
+      triggerToast('कृपया फोटोची लिंक टाका किंवा फोटो अपलोड करा!');
+      return;
+    }
+    
     try {
-      // इथे नवीन Render ची लिंक टाकली आहे 
       const url = editId 
         ? `https://shahuraje-backend-1.onrender.com/api/products/${editId}` 
         : 'https://shahuraje-backend-1.onrender.com/api/products/add';
@@ -85,17 +107,14 @@ const Products = () => {
     }
   };
 
-  // २. डिलीट आयकॉनवर क्लिक केल्यावर सेंटर मॉडेल उघडणे
   const confirmDelete = (product) => {
     setProductToDelete(product);
     setDeleteModalOpen(true);
   };
 
-  // ३. "होय" वर क्लिक केल्यावर डेटाबेसमधून डिलीट करणे
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
     try {
-      // इथेही नवीन Render ची लिंक टाकली आहे 
       const response = await fetch(`https://shahuraje-backend-1.onrender.com/api/products/${productToDelete._id}`, {
         method: 'DELETE'
       });
@@ -137,7 +156,7 @@ const Products = () => {
           className="bg-[#154f30] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#1b613c] transition-colors shadow-sm"
         >
           <Plus size={20} />
-          <span className="font-medium">+ नवीन उत्पादन</span>
+          <span className="font-medium">नवीन उत्पादन</span>
         </button>
       </div>
 
@@ -257,7 +276,7 @@ const Products = () => {
       {/* ५. ॲड / एडिट मॉडेल */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
               <h2 className="text-lg font-bold text-gray-800">
                 {editId ? 'उत्पादन अपडेट करा' : 'नवीन उत्पादन ॲड करा'}
@@ -267,7 +286,7 @@ const Products = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">नाव (Name)</label>
@@ -301,13 +320,62 @@ const Products = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">फोटोची लिंक (Image URL)</label>
-                <input required type="url" placeholder="उदा. https://images.unsplash.com/..." value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#154f30] text-sm" />
-                <p className="text-[10px] text-gray-500 mt-1">सध्या इंटरनेटवरील फोटोची लिंक येथे टाका.</p>
+              {/* 👉 नवीन: फोटोसाठी URL आणि Upload चा पर्याय */}
+              <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm font-bold text-gray-700">उत्पादनाचा फोटो</label>
+                  <div className="flex bg-gray-200 rounded-lg p-1">
+                    <button 
+                      type="button" 
+                      onClick={() => { setImageInputType('url'); setFormData({...formData, image: ''}); }}
+                      className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-md transition-all ${imageInputType === 'url' ? 'bg-white text-[#154f30] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <LinkIcon size={14} /> लिंक
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { setImageInputType('upload'); setFormData({...formData, image: ''}); }}
+                      className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-md transition-all ${imageInputType === 'upload' ? 'bg-white text-[#154f30] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <UploadCloud size={14} /> अपलोड
+                    </button>
+                  </div>
+                </div>
+
+                {imageInputType === 'url' ? (
+                  <input 
+                    type="url" 
+                    placeholder="उदा. https://images.unsplash.com/..." 
+                    value={formData.image} 
+                    onChange={(e) => setFormData({...formData, image: e.target.value})} 
+                    className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#154f30] text-sm bg-white" 
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-white hover:bg-gray-50 hover:border-[#154f30] transition-all">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <UploadCloud size={24} className="text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-500 font-medium">क्लिक करून फोटो निवडा (JPG, PNG)</p>
+                      </div>
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    </label>
+                  </div>
+                )}
+
+                {/* फोटोचा प्रिव्ह्यू */}
+                {formData.image && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-white">
+                      <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 size={14} /> फोटो तयार आहे
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <button type="submit" className="w-full bg-[#154f30] text-white py-2.5 rounded-lg font-bold hover:bg-[#1b613c] transition-all mt-2">
+              <button type="submit" className="w-full bg-[#154f30] text-white py-3 rounded-xl font-bold hover:bg-[#1b613c] transition-all mt-4 shadow-md">
                 {editId ? 'बदल सेव्ह करा' : 'उत्पादन सेव्ह करा'}
               </button>
             </form>
