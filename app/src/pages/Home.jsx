@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IonPage, IonContent } from '@ionic/react';
+// 👉 Badal 1: IonRefresher ani IonRefresherContent import kele
+import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, ShoppingCart, Home as HomeIcon, User, Package, Plus, 
@@ -122,6 +123,38 @@ const Home = () => {
     }
   }, []);
 
+  // 👉 Badal 2: Pull to Refresh handle karnare function
+  const handleRefresh = async (event) => {
+    try {
+      // Products punha aana
+      const productRes = await fetch('https://shahuraje-backend-1.onrender.com/api/products');
+      const productData = await productRes.json();
+      setProducts(productData);
+
+      // Weather punha aana
+      const fetchWeather = (lat, lon) => {
+        return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&timezone=auto`)
+          .then(res => res.json())
+          .then(data => setWeather(data.current))
+          .catch(err => console.error(err));
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+          () => fetchWeather(17.6599, 75.9064)
+        );
+      } else {
+        await fetchWeather(17.6599, 75.9064);
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      // Loading spinner band kara
+      event.detail.complete();
+    }
+  };
+
   const displayedProducts = products.filter((item) => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
@@ -172,6 +205,15 @@ const Home = () => {
   return (
     <IonPage>
       <IonContent fullscreen className="bg-gray-50">
+        
+        {/* 👉 Badal 3: IonRefresher Component (IonContent chya aat top la) */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent 
+            pullingText="खाली ओढा..." 
+            refreshingText="नवीन माहिती आणत आहे...">
+          </IonRefresherContent>
+        </IonRefresher>
+
         <div className="w-full min-h-full flex flex-col pb-32">
           
           {/* १. हेडर */}
